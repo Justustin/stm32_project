@@ -25,4 +25,11 @@ void EIE3810_TFTLCD_Clear(u16 color);
 void EIE3810_TFTLCD_FillRectangle(u16 start_x, u16 length_x, u16 start_y, u16 length_y, u16 color);
 void EIE3810_TFTLCD_ShowChar(u16 x, u16 y, u8 ASCII, u16 color, u16 bgcolor);
 void EIE3810_ShowChar(u16 x, u16 y, u8 ASCII, u16 color, u16 bgcolor);
+
+// Additional functions from root EIE3810_TFTLCD.c
+void EIE3810_TFTLCD_DrawCircle(u16 x0, u16 y0, u8 r, u8 full, u16 color);
+void EIE3810_TFTLCD_ShowChar2412(u16 x, u16 y, u8 ascii, u16 color, u16 bgcolor);
+void EIE3810_TFTLCD_ShowString2412(u16 x, u16 y, char* str, u16 color, u16 bgcolor);
+void EIE3810_TFTLCD_DrawRectangle(u16 start_x, u16 start_y, u16 width, u16 height, u16 color);
+void EIE3810_TFTLCD_FillScreen(u16 color);
 #endif

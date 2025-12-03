@@ -23,6 +23,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f10x_it.h"
+#include "game.h"
+#include "EIE3810_TFTLCD.h"
 
 /** @addtogroup STM32F10x_StdPeriph_Template
   * @{
@@ -152,9 +154,170 @@ void SysTick_Handler(void)
 {
 }*/
 
+// External variables from main.c
+extern u8 difficulty;
+extern u8 playerA_ready;
+extern u8 playerB_ready;
+extern u8 usartReceived;
+extern u8 randomSeed;
+extern GameState currentState;
+
+// External functions from game.c
+extern void movePlayerAPad(s8 direction);
+extern void handleJoypadInput(u8 data);
+extern void updateBallPosition(void);
+extern void updateGameDisplay(void);
+extern void showPauseScreen(void);
+extern void updateDifficultyScreen(void);
+
+// External functions from main.c
+extern u8 JOYPAD_Read(void);
+extern void Delay(u32 count);
+
+/**
+  * @brief  USART1 interrupt handler (receives random seed)
+  */
+void USART1_IRQHandler(void)
+{
+	u8 temp;
+	if(USART1->SR & (1<<5)) // RXNE: Read data register not empty
+	{
+		temp = USART1->DR; // Read received data
+		if(temp >= '0' && temp <= '7') // Validate random seed (0-7)
+		{
+			randomSeed = temp - '0';
+			usartReceived = 1;
+		}
+	}
+}
+
+/**
+  * @brief  EXTI2 interrupt handler (KEY2 - Player A move left/right)
+  */
+void EXTI2_IRQHandler(void)
+{
+	if(EXTI->PR & (1<<2)) // Check EXTI2 pending bit
+	{
+		Delay(10000); // Debounce delay
+		if(currentState == STATE_PLAYING)
+		{
+			movePlayerAPad(1); // Move right
+		}
+		EXTI->PR = 1<<2; // Clear pending bit
+	}
+}
+
+/**
+  * @brief  EXTI3 interrupt handler (KEY1 - Pause/Unpause or difficulty)
+  */
+void EXTI3_IRQHandler(void)
+{
+	if(EXTI->PR & (1<<3)) // Check EXTI3 pending bit
+	{
+		Delay(10000); // Debounce delay
+
+		if(currentState == STATE_DIFFICULTY_SELECT)
+		{
+			difficulty = 1 - difficulty; // Toggle difficulty
+			updateDifficultyScreen();
+		}
+		else if(currentState == STATE_PLAYING)
+		{
+			currentState = STATE_PAUSED;
+			showPauseScreen();
+		}
+		else if(currentState == STATE_PAUSED)
+		{
+			currentState = STATE_PLAYING;
+			// Clear pause text
+			EIE3810_TFTLCD_FillRectangle(150, 180, 380, 40, WHITE);
+		}
+
+		EXTI->PR = 1<<3; // Clear pending bit
+	}
+}
+
+/**
+  * @brief  EXTI4 interrupt handler (KEY0 - Confirm or Player A move)
+  */
+void EXTI4_IRQHandler(void)
+{
+	if(EXTI->PR & (1<<4)) // Check EXTI4 pending bit
+	{
+		Delay(10000); // Debounce delay
+
+		if(currentState == STATE_DIFFICULTY_SELECT)
+		{
+			playerA_ready = 1;
+			updateDifficultyScreen();
+		}
+		else if(currentState == STATE_PLAYING)
+		{
+			movePlayerAPad(-1); // Move left
+		}
+
+		EXTI->PR = 1<<4; // Clear pending bit
+	}
+}
+
+/**
+  * @brief  TIM3 interrupt handler (Game update and joypad reading)
+  */
+void TIM3_IRQHandler(void)
+{
+	if(TIM3->SR & (1<<0)) // Update interrupt flag
+	{
+		// Read joypad input
+		u8 joypadData = JOYPAD_Read();
+		if(joypadData != 0)
+		{
+			// Decode joypad button
+			u8 button = 0;
+			for(int i = 0; i < 8; i++)
+			{
+				if((joypadData >> i) == 1)
+				{
+					button = i + 1;
+					break;
+				}
+			}
+
+			// Handle joypad input based on button index
+			if(button == 1) handleJoypadInput('A'); // A button
+			else if(button == 2) handleJoypadInput('B'); // B button
+			else if(button == 3) handleJoypadInput('S'); // SELECT
+			else if(button == 4) handleJoypadInput('T'); // START (pause)
+			else if(button == 5) handleJoypadInput('U'); // UP
+			else if(button == 6) handleJoypadInput('D'); // DOWN
+			else if(button == 7) handleJoypadInput('L'); // LEFT
+			else if(button == 8) handleJoypadInput('R'); // RIGHT
+		}
+
+		// Update ball position during gameplay
+		if(currentState == STATE_PLAYING)
+		{
+			updateBallPosition();
+			updateGameDisplay();
+		}
+	}
+	TIM3->SR &= ~(1<<0); // Clear update interrupt flag
+}
+
+/**
+  * @brief  TIM4 interrupt handler
+  */
+void TIM4_IRQHandler(void)
+{
+	if(TIM4->SR & 1<<0) // Update interrupt flag
+	{
+		GPIOE->ODR ^= 1<<5; // Toggle GPIOE pin 5
+	}
+	TIM4->SR &= ~(1<<0); // Clear update interrupt flag
+}
+
 /**
   * @}
-  */ 
+  */
 
 
 /******************* (C) COPYRIGHT 2011 STMicroelectronics *****END OF FILE****/
