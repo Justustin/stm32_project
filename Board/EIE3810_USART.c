@@ -7,25 +7,27 @@ void EIE3810_USART1_EXTIInit(void)
 	NVIC->ISER[1] |= 1<<5; // enable interrupt USART1
 }
 
-void EIE3810_USART1_init(u32 pclk1, u32 baudrate) // pclk: input clock to the peripheral
+void EIE3810_USART1_init(u32 pclk2, u32 baudrate) // pclk2: APB2 clock in MHz (72 for STM32F103)
 {
-	//USART2
+	//USART1 is on APB2 bus
 	float temp;
 	u16 mantissa;
 	u16 fraction;
-	temp=(float) (pclk1*1000000)/(baudrate*16); // Tx/Rx baud
+	temp=(float) (pclk2*1000000)/(baudrate*16); // Tx/Rx baud
 	mantissa=temp;
 	fraction=(temp-mantissa)*16;
 	mantissa<<=4;
 	mantissa+=fraction;
+	RCC->APB2ENR |= 1<<14; // Enable USART1 clock (CRITICAL - was missing!)
 	RCC->APB2ENR |= 1<<2; //enable GPIOA
 	GPIOA->CRH &= 0xFFFFF00F; //
-	GPIOA->CRH |= 0x000008B0; //PA9(TX):output, push-pill; PA10(RX):input, pull-up/pull down
+	GPIOA->CRH |= 0x000008B0; //PA9(TX):output, push-pull; PA10(RX):input, pull-up/pull down
+	GPIOA->ODR |= 1<<10; // Enable pull-up on PA10 (RX)
 	RCC->APB2RSTR |= 1<<14; //Reset USART1
-	RCC->APB2RSTR &= ~(1<<14); //no effect, set the value back to 0
+	RCC->APB2RSTR &= ~(1<<14); //Release reset
 	USART1->BRR=mantissa;//set the baud rate
-	USART1->CR1=0x2008; //transmitter is enabled + word length is 10 bit(1 start, 9 data) + disable parity
-	USART1->CR1|=0x24; // set: RXNE interrupt enable and reciever enable
+	USART1->CR1=0x200C; // UE=1 (enable), TE=1 (transmit), RE=1 (receive), M=0 (8-bit), PCE=0 (no parity)
+	USART1->CR1|=0x20; // RXNEIE: RXNE interrupt enable
 }
 
 

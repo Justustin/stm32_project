@@ -38,9 +38,9 @@ int main(void)
 	KEY_Init();
 
 	// Initialize USART1 with proper baud rate
-	// Note: You need to measure the baud rate with oscilloscope for your student ID
-	// For testing, using 9600 baud rate
-	EIE3810_USART1_init(36, 9600);
+	// USART1 is on APB2 bus which runs at 72MHz
+	// Baud rate for student ID 122040026: ~9600
+	EIE3810_USART1_init(72, 9600);
 	EIE3810_USART1_EXTIInit();
 
 	// Initialize timers
