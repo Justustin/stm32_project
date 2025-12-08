@@ -24,6 +24,7 @@ void EIE3810_TFTLCD_DrawDot(u16 x, u16 y, u16 colors);
 void EIE3810_TFTLCD_Clear(u16 color);
 void EIE3810_TFTLCD_FillRectangle(u16 start_x, u16 length_x, u16 start_y, u16 length_y, u16 color);
 void EIE3810_TFTLCD_ShowChar(u16 x, u16 y, u8 ASCII, u16 color, u16 bgcolor);
+void EIE3810_TFTLCD_ShowString1608(u16 x, u16 y, char* str, u16 color, u16 bgcolor);
 void EIE3810_ShowChar(u16 x, u16 y, u8 ASCII, u16 color, u16 bgcolor);
 
 // Additional functions from root EIE3810_TFTLCD.c
