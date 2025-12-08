@@ -15,22 +15,22 @@ extern u8 playerB_ready;
 #define BALL_RADIUS 8
 #define PAD_WIDTH 60
 #define PAD_HEIGHT 10
-#define SCREEN_WIDTH 480    // Your LCD is 800x480
-#define SCREEN_HEIGHT 800
+#define SCREEN_WIDTH 240    // 2.8" TFT LCD width
+#define SCREEN_HEIGHT 320   // 2.8" TFT LCD height
 
 // Ball state
-u16 ballX = 240;
-u16 ballY = 400;
+u16 ballX = 120;
+u16 ballY = 160;
 s8 ballVx = 2;
 s8 ballVy = 2;
-u16 oldBallX = 240;
-u16 oldBallY = 400;
+u16 oldBallX = 120;
+u16 oldBallY = 160;
 
 // Pad positions
-u16 padA_x = 210;  // Player A (bottom)
-u16 padB_x = 210;  // Player B (top)
-u16 padA_y = 760;
-u16 padB_y = 10;
+u16 padA_x = 90;   // Player A (bottom) - centered
+u16 padB_x = 90;   // Player B (top) - centered
+u16 padA_y = 300;  // Near bottom
+u16 padB_y = 10;   // Near top
 
 // Game stats
 u32 gameTime = 0;

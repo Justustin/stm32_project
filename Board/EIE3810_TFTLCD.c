@@ -749,5 +749,5 @@ void EIE3810_TFTLCD_DrawRectangle(u16 start_x, u16 start_y, u16 width, u16 heigh
 // Fill the entire screen with a color
 void EIE3810_TFTLCD_FillScreen(u16 color)
 {
-	EIE3810_TFTLCD_FillRectangle(0, 480, 0, 800, color);
+	EIE3810_TFTLCD_FillRectangle(0, 240, 0, 320, color);
 }
