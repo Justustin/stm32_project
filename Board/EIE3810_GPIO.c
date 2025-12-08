@@ -30,13 +30,15 @@ void KEY_Init(void)
 
 	// Configure PE2, PE3, PE4 as inputs with pull-up
 	GPIOE->CRL &= 0xFFF000FF; // Clear PE2, PE3, PE4 configuration
-	GPIOE->CRL |= 0x000888000; // Input with pull-up / pull-down
+	GPIOE->CRL |= 0x00088800; // Input with pull-up / pull-down for PE2(8-11), PE3(12-15), PE4(16-19)
 	GPIOE->ODR |= 0x1C; // Enable pull-up on PE2, PE3, PE4 (bits 2, 3, 4)
 
 	// Configure EXTI for PE2, PE3, PE4
-	AFIO->EXTICR[0] &= 0xFF0F; // Clear EXTI2, EXTI3
-	AFIO->EXTICR[0] |= 0x0040; // EXTI2 -> PE2
-	AFIO->EXTICR[0] |= 0x0400; // EXTI3 -> PE3
+	// EXTICR[0]: bits 8-11 = EXTI2, bits 12-15 = EXTI3
+	// Port E = 0x4
+	AFIO->EXTICR[0] &= ~0xFF00; // Clear EXTI2 (bits 8-11) and EXTI3 (bits 12-15)
+	AFIO->EXTICR[0] |= 0x0400; // EXTI2 -> PE2 (port E = 4 << 8)
+	AFIO->EXTICR[0] |= 0x4000; // EXTI3 -> PE3 (port E = 4 << 12)
 
 	AFIO->EXTICR[1] &= 0xFFF0; // Clear EXTI4
 	AFIO->EXTICR[1] |= 0x0004; // EXTI4 -> PE4
