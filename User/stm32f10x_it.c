@@ -199,7 +199,21 @@ void EXTI2_IRQHandler(void)
 	if(EXTI->PR & (1<<2)) // Check EXTI2 pending bit
 	{
 		Delay(10000); // Debounce delay
-		if(currentState == STATE_PLAYING)
+
+		// For development without joypad: KEY2 can confirm Player B
+		if(currentState == STATE_DIFFICULTY_SELECT)
+		{
+			playerB_ready = 1;
+			updateDifficultyScreen();
+			// Check if both players are ready to proceed
+			if(playerA_ready)
+			{
+				currentState = STATE_WAIT_USART;
+				extern void showWaitUSARTScreen(void);
+				showWaitUSARTScreen();
+			}
+		}
+		else if(currentState == STATE_PLAYING)
 		{
 			movePlayerAPad(1); // Move right
 		}
