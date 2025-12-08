@@ -32,6 +32,7 @@ int main(void)
 	// Initialize peripherals
 	EIE3810_LED_Init();
 	EIE3810_TFTLCD_Init();
+
 	JOYPAD_Init();
 	Buzzer_Init();
 	KEY_Init();

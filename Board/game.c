@@ -52,25 +52,25 @@ u32 powInt(u32 base, u32 exp) {
 }
 
 void showString(u16 x, u16 y, char* str, u16 color, u16 bgcolor) {
-    EIE3810_TFTLCD_ShowString2412(x, y, str, color, bgcolor);
+    EIE3810_TFTLCD_ShowString1608(x, y, str, color, bgcolor);  // Use smaller 8x16 font
 }
 
 void showNumber(u16 x, u16 y, u32 num, u8 len, u16 color, u16 bgcolor) {
     u8 i;
     u8 temp;
     u8 enshow = 0;
-    
+
     for(i = 0; i < len; i++) {
         temp = (num / powInt(10, len - i - 1)) % 10;
         if(enshow == 0 && i < (len - 1)) {
             if(temp == 0) {
-                EIE3810_TFTLCD_ShowChar2412(x + 12 * i, y, ' ', color, bgcolor);
+                EIE3810_TFTLCD_ShowChar(x + 8 * i, y, ' ', color, bgcolor);
                 continue;
             } else {
                 enshow = 1;
             }
         }
-        EIE3810_TFTLCD_ShowChar2412(x + 12 * i, y, temp + '0', color, bgcolor);
+        EIE3810_TFTLCD_ShowChar(x + 8 * i, y, temp + '0', color, bgcolor);
     }
 }
 
@@ -97,31 +97,32 @@ void drawPads(void) {
 
 void showWelcomeScreen(void) {
     EIE3810_TFTLCD_FillScreen(WHITE);
-    showString(80, 200, "Welcome to mini Project!", BLUE, WHITE);
-    showString(80, 250, "This is the Final Lab", RED, WHITE);
-    showString(80, 300, "Are you ready?", RED, WHITE);
-    showString(80, 350, "3...2...1...Let's start", RED, WHITE);
+    showString(10, 100, "Welcome to Project!", BLUE, WHITE);
+    showString(10, 130, "Final Lab Game", RED, WHITE);
+    showString(10, 160, "Are you ready?", RED, WHITE);
+    showString(10, 190, "Let's start!", GREEN, WHITE);
 }
 
 void showDifficultyScreen(void) {
     EIE3810_TFTLCD_FillScreen(WHITE);
-    showString(50, 150, "Please select difficulty:", RED, WHITE);
-    
+    showString(10, 80, "Select difficulty:", RED, WHITE);
+
     if(difficulty == 0) {
-        showString(50, 250, "Easy", BLUE, WHITE);
-        showString(50, 300, "Hard", BLACK, WHITE);
+        showString(10, 120, "> Easy", BLUE, WHITE);
+        showString(10, 140, "  Hard", BLACK, WHITE);
     } else {
-        showString(50, 250, "Easy", BLACK, WHITE);
-        showString(50, 300, "Hard", BLUE, WHITE);
+        showString(10, 120, "  Easy", BLACK, WHITE);
+        showString(10, 140, "> Hard", BLUE, WHITE);
     }
-    
-    showString(50, 400, "Press KEY0 to enter.", RED, WHITE);
-    
+
+    showString(10, 180, "KEY0: Select", RED, WHITE);
+    showString(10, 200, "KEY1: Toggle", RED, WHITE);
+
     if(playerA_ready) {
-        showString(50, 500, "Player A: Ready", GREEN, WHITE);
+        showString(10, 240, "Player A: Ready", GREEN, WHITE);
     }
     if(playerB_ready) {
-        showString(50, 530, "Player B: Ready", GREEN, WHITE);
+        showString(10, 260, "Player B: Ready", GREEN, WHITE);
     }
 }
 
@@ -131,49 +132,49 @@ void updateDifficultyScreen(void) {
 
 void showWaitUSARTScreen(void) {
     EIE3810_TFTLCD_FillScreen(WHITE);
-    showString(50, 350, "Use USART for a random", RED, WHITE);
-    showString(50, 380, "direction.", RED, WHITE);
+    showString(10, 140, "Waiting for USART...", RED, WHITE);
+    showString(10, 170, "Send value 0-7", BLUE, WHITE);
 }
 
 void startCountdown(void) {
     EIE3810_TFTLCD_FillScreen(WHITE);
-    
+
     drawPads();
     EIE3810_TFTLCD_DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, BLACK);
-    
-    showString(220, 380, "3", RED, WHITE);
+
+    showString(110, 150, "3", RED, WHITE);
     Delay(1000000);
-    
-    EIE3810_TFTLCD_FillRectangle(220, 24, 380, 24, WHITE);  // Clear
-    showString(220, 380, "2", RED, WHITE);
+
+    EIE3810_TFTLCD_FillRectangle(110, 8, 150, 16, WHITE);  // Clear
+    showString(110, 150, "2", RED, WHITE);
     Delay(1000000);
-    
-    EIE3810_TFTLCD_FillRectangle(220, 24, 380, 24, WHITE);
-    showString(220, 380, "1", RED, WHITE);
+
+    EIE3810_TFTLCD_FillRectangle(110, 8, 150, 16, WHITE);
+    showString(110, 150, "1", RED, WHITE);
     Delay(1000000);
-    
-    EIE3810_TFTLCD_FillRectangle(220, 24, 380, 24, WHITE);
-    showString(200, 380, "GO!", GREEN, WHITE);
+
+    EIE3810_TFTLCD_FillRectangle(110, 24, 150, 16, WHITE);
+    showString(100, 150, "GO!", GREEN, WHITE);
     Delay(500000);
-    
-    EIE3810_TFTLCD_FillRectangle(200, 60, 380, 24, WHITE);
+
+    EIE3810_TFTLCD_FillRectangle(100, 24, 150, 16, WHITE);
 }
 
 void showPauseScreen(void) {
-    EIE3810_TFTLCD_FillRectangle(150, 180, 380, 40, BLACK);
-    showString(180, 390, "PAUSED", YELLOW, BLACK);
+    EIE3810_TFTLCD_FillRectangle(60, 120, 140, 30, BLACK);
+    showString(80, 150, "PAUSED", YELLOW, BLACK);
 }
 
 void showGameOverScreen(void) {
     EIE3810_TFTLCD_FillScreen(BLACK);
-    
+
     if(winner == 1) {
-        showString(120, 300, "Player A Wins!", GREEN, BLACK);
+        showString(50, 140, "Player A Wins!", GREEN, BLACK);
     } else if(winner == 2) {
-        showString(120, 300, "Player B Wins!", GREEN, BLACK);
+        showString(50, 140, "Player B Wins!", GREEN, BLACK);
     }
-    
-    showString(100, 400, "Restarting...", WHITE, BLACK);
+
+    showString(50, 180, "Restarting...", WHITE, BLACK);
 }
 
 /****************************************
@@ -215,9 +216,10 @@ void initGame(u8 seed, u8 diff) {
     EIE3810_TFTLCD_FillScreen(WHITE);
     drawPads();
     drawBall();
-    
-    showString(10, 10, "Time:", BLACK, WHITE);
-    showString(300, 10, "Bounces:", BLACK, WHITE);
+
+    // HUD display - fit on 240px width
+    showString(5, 5, "Time:", BLACK, WHITE);
+    showString(130, 5, "Bounces:", BLACK, WHITE);
 }
 
 void updateBallPosition(void) {
@@ -353,11 +355,13 @@ void updateGameDisplay(void) {
     static u32 lastDisplayTime = 0;
     if(gameTime - lastDisplayTime >= 100) {
         lastDisplayTime = gameTime;
-        
-        EIE3810_TFTLCD_FillRectangle(80, 100, 10, 24, WHITE);
-        showNumber(80, 10, gameTime / 100, 3, BLACK, WHITE);
-        
-        EIE3810_TFTLCD_FillRectangle(420, 50, 10, 24, WHITE);
-        showNumber(420, 10, bounceCount, 3, BLACK, WHITE);
+
+        // Update Time display (3 digits * 8px = 24px wide, 16px tall)
+        EIE3810_TFTLCD_FillRectangle(45, 24, 5, 16, WHITE);
+        showNumber(45, 5, gameTime / 100, 3, BLACK, WHITE);
+
+        // Update Bounces display
+        EIE3810_TFTLCD_FillRectangle(200, 24, 5, 16, WHITE);
+        showNumber(200, 5, bounceCount, 3, BLACK, WHITE);
     }
 }
