@@ -208,15 +208,22 @@ void initGame(u8 seed, u8 diff) {
     
     // Set velocity based on seed (0-7)
     // Ball must always have vertical velocity to reach players
+    // Reduced speed for better gameplay
     switch(seed % 8) {
-        case 0: ballVx = 1 * speedMultiplier; ballVy = 3 * speedMultiplier; break;  // Slight right, down
-        case 1: ballVx = 0; ballVy = 3 * speedMultiplier; break;                     // Straight down
-        case 2: ballVx = -1 * speedMultiplier; ballVy = 3 * speedMultiplier; break; // Slight left, down
-        case 3: ballVx = -2 * speedMultiplier; ballVy = 2 * speedMultiplier; break; // Left, down
-        case 4: ballVx = -1 * speedMultiplier; ballVy = -3 * speedMultiplier; break;// Slight left, up
-        case 5: ballVx = 0; ballVy = -3 * speedMultiplier; break;                    // Straight up
-        case 6: ballVx = 1 * speedMultiplier; ballVy = -3 * speedMultiplier; break; // Slight right, up
-        case 7: ballVx = 2 * speedMultiplier; ballVy = -2 * speedMultiplier; break; // Right, up
+        case 0: ballVx = 1; ballVy = 2; break;  // Slight right, down
+        case 1: ballVx = 0; ballVy = 2; break;  // Straight down
+        case 2: ballVx = -1; ballVy = 2; break; // Slight left, down
+        case 3: ballVx = -1; ballVy = 2; break; // Left, down
+        case 4: ballVx = -1; ballVy = -2; break;// Slight left, up
+        case 5: ballVx = 0; ballVy = -2; break; // Straight up
+        case 6: ballVx = 1; ballVy = -2; break; // Slight right, up
+        case 7: ballVx = 1; ballVy = -2; break; // Right, up
+    }
+
+    // Apply speed multiplier for hard mode (but keep it reasonable)
+    if(diff == 1) {
+        ballVx = ballVx * 3 / 2; // 1.5x speed for hard mode
+        ballVy = ballVy * 3 / 2;
     }
     
     EIE3810_TFTLCD_FillScreen(WHITE);
@@ -293,6 +300,9 @@ void updateBallPosition(void) {
     
     clearBall();
     drawBall();
+
+    // Redraw pads in case ball clearing erased part of them
+    drawPads();
 }
 
 void movePlayerAPad(s8 direction) {
