@@ -207,15 +207,16 @@ void initGame(u8 seed, u8 diff) {
     }
     
     // Set velocity based on seed (0-7)
+    // Ball must always have vertical velocity to reach players
     switch(seed % 8) {
-        case 0: ballVx = 2 * speedMultiplier; ballVy = 2 * speedMultiplier; break;
-        case 1: ballVx = 0; ballVy = 3 * speedMultiplier; break;
-        case 2: ballVx = -2 * speedMultiplier; ballVy = 2 * speedMultiplier; break;
-        case 3: ballVx = -3 * speedMultiplier; ballVy = 0; break;
-        case 4: ballVx = -2 * speedMultiplier; ballVy = -2 * speedMultiplier; break;
-        case 5: ballVx = 0; ballVy = -3 * speedMultiplier; break;
-        case 6: ballVx = 2 * speedMultiplier; ballVy = -2 * speedMultiplier; break;
-        case 7: ballVx = 3 * speedMultiplier; ballVy = 0; break;
+        case 0: ballVx = 1 * speedMultiplier; ballVy = 3 * speedMultiplier; break;  // Slight right, down
+        case 1: ballVx = 0; ballVy = 3 * speedMultiplier; break;                     // Straight down
+        case 2: ballVx = -1 * speedMultiplier; ballVy = 3 * speedMultiplier; break; // Slight left, down
+        case 3: ballVx = -2 * speedMultiplier; ballVy = 2 * speedMultiplier; break; // Left, down
+        case 4: ballVx = -1 * speedMultiplier; ballVy = -3 * speedMultiplier; break;// Slight left, up
+        case 5: ballVx = 0; ballVy = -3 * speedMultiplier; break;                    // Straight up
+        case 6: ballVx = 1 * speedMultiplier; ballVy = -3 * speedMultiplier; break; // Slight right, up
+        case 7: ballVx = 2 * speedMultiplier; ballVy = -2 * speedMultiplier; break; // Right, up
     }
     
     EIE3810_TFTLCD_FillScreen(WHITE);
