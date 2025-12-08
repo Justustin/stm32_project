@@ -273,7 +273,8 @@ void TIM3_IRQHandler(void)
 		{
 			// Decode joypad button
 			u8 button = 0;
-			for(int i = 0; i < 8; i++)
+			u8 i;
+			for(i = 0; i < 8; i++)
 			{
 				if((joypadData >> i) == 1)
 				{
