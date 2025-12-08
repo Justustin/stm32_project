@@ -229,8 +229,8 @@ void EXTI3_IRQHandler(void)
 		else if(currentState == STATE_PAUSED)
 		{
 			currentState = STATE_PLAYING;
-			// Clear pause text
-			EIE3810_TFTLCD_FillRectangle(150, 180, 380, 40, WHITE);
+			// Clear pause text (fixed coordinates for 2.8" LCD)
+			EIE3810_TFTLCD_FillRectangle(60, 120, 140, 30, WHITE);
 		}
 
 		EXTI->PR = 1<<3; // Clear pending bit
@@ -250,6 +250,13 @@ void EXTI4_IRQHandler(void)
 		{
 			playerA_ready = 1;
 			updateDifficultyScreen();
+			// Check if both players are ready to proceed
+			if(playerB_ready)
+			{
+				currentState = STATE_WAIT_USART;
+				extern void showWaitUSARTScreen(void);
+				showWaitUSARTScreen();
+			}
 		}
 		else if(currentState == STATE_PLAYING)
 		{

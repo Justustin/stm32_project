@@ -325,8 +325,10 @@ void handleJoypadInput(u8 data) {
         else if(data == 'S') {
             playerB_ready = 1;
             updateDifficultyScreen();
+            // Check if both players are ready to proceed
             if(playerA_ready) {
                 currentState = STATE_WAIT_USART;
+                showWaitUSARTScreen();
             }
         }
     }
@@ -344,7 +346,8 @@ void handleJoypadInput(u8 data) {
     else if(currentState == STATE_PAUSED) {
         if(data == 'T') {
             currentState = STATE_PLAYING;
-            EIE3810_TFTLCD_FillRectangle(150, 180, 380, 40, WHITE);
+            // Clear pause text (fixed coordinates for 2.8" LCD)
+            EIE3810_TFTLCD_FillRectangle(60, 120, 140, 30, WHITE);
         }
     }
 }
