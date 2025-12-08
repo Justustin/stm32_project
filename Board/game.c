@@ -12,25 +12,27 @@ extern u8 playerA_ready;
 extern u8 playerB_ready;
 
 // Game constants
-#define BALL_RADIUS 8
-#define PAD_WIDTH 60
-#define PAD_HEIGHT 10
+#define BALL_RADIUS 6
+#define PAD_WIDTH 50      // Pong-style paddle width
+#define PAD_HEIGHT 8      // Pong-style paddle height
 #define SCREEN_WIDTH 240    // 2.8" TFT LCD width
 #define SCREEN_HEIGHT 320   // 2.8" TFT LCD height
+#define BALL_SPEED_DIVIDER 3  // Ball moves every N frames (higher = slower)
 
 // Ball state
 u16 ballX = 120;
 u16 ballY = 160;
-s8 ballVx = 2;
-s8 ballVy = 2;
+s8 ballVx = 1;
+s8 ballVy = 1;
 u16 oldBallX = 120;
 u16 oldBallY = 160;
+u8 frameCounter = 0;  // For slowing down ball
 
 // Pad positions
-u16 padA_x = 90;   // Player A (bottom) - centered
-u16 padB_x = 90;   // Player B (top) - centered
-u16 padA_y = 300;  // Near bottom
-u16 padB_y = 10;   // Near top
+u16 padA_x = 95;   // Player A (bottom) - centered
+u16 padB_x = 95;   // Player B (top) - centered
+u16 padA_y = 305;  // Near bottom
+u16 padB_y = 8;    // Near top
 
 // Game stats
 u32 gameTime = 0;
@@ -206,24 +208,20 @@ void initGame(u8 seed, u8 diff) {
         speedMultiplier = 2;
     }
     
-    // Set velocity based on seed (0-7)
-    // Ball must always have vertical velocity to reach players
-    // Reduced speed for better gameplay
-    switch(seed % 8) {
-        case 0: ballVx = 1; ballVy = 2; break;  // Slight right, down
-        case 1: ballVx = 0; ballVy = 2; break;  // Straight down
-        case 2: ballVx = -1; ballVy = 2; break; // Slight left, down
-        case 3: ballVx = -1; ballVy = 2; break; // Left, down
-        case 4: ballVx = -1; ballVy = -2; break;// Slight left, up
-        case 5: ballVx = 0; ballVy = -2; break; // Straight up
-        case 6: ballVx = 1; ballVy = -2; break; // Slight right, up
-        case 7: ballVx = 1; ballVy = -2; break; // Right, up
-    }
+    // Reset frame counter
+    frameCounter = 0;
 
-    // Apply speed multiplier for hard mode (but keep it reasonable)
-    if(diff == 1) {
-        ballVx = ballVx * 3 / 2; // 1.5x speed for hard mode
-        ballVy = ballVy * 3 / 2;
+    // Set velocity based on seed (0-7)
+    // Ball moves 1 pixel every BALL_SPEED_DIVIDER frames
+    switch(seed % 8) {
+        case 0: ballVx = 1; ballVy = 1; break;   // Right, down
+        case 1: ballVx = 0; ballVy = 1; break;   // Straight down
+        case 2: ballVx = -1; ballVy = 1; break;  // Left, down
+        case 3: ballVx = -1; ballVy = 1; break;  // Left, down
+        case 4: ballVx = -1; ballVy = -1; break; // Left, up
+        case 5: ballVx = 0; ballVy = -1; break;  // Straight up
+        case 6: ballVx = 1; ballVy = -1; break;  // Right, up
+        case 7: ballVx = 1; ballVy = -1; break;  // Right, up
     }
     
     EIE3810_TFTLCD_FillScreen(WHITE);
@@ -237,12 +235,19 @@ void initGame(u8 seed, u8 diff) {
 
 void updateBallPosition(void) {
     if(!gameStarted || currentState != STATE_PLAYING) return;
-    
+
     gameTime++;
-    
+
+    // Frame skipping for slower ball movement
+    frameCounter++;
+    if(frameCounter < BALL_SPEED_DIVIDER) {
+        return; // Skip this frame
+    }
+    frameCounter = 0;
+
     oldBallX = ballX;
     oldBallY = ballY;
-    
+
     ballX += ballVx;
     ballY += ballVy;
     
