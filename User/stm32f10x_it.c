@@ -174,6 +174,10 @@ extern void updateDifficultyScreen(void);
 extern u8 JOYPAD_Read(void);
 extern void Delay(u32 count);
 
+// Debug: to show what's received
+extern void showString(u16 x, u16 y, char* str, u16 color, u16 bgcolor);
+extern void showNumber(u16 x, u16 y, u32 num, u8 len, u16 color, u16 bgcolor);
+
 /**
   * @brief  USART1 interrupt handler (receives random seed)
   */
@@ -183,9 +187,26 @@ void USART1_IRQHandler(void)
 	if(USART1->SR & (1<<5)) // RXNE: Read data register not empty
 	{
 		temp = USART1->DR; // Read received data
-		if(temp >= '0' && temp <= '7') // Validate random seed (0-7)
+
+		// DEBUG: Buzz to confirm interrupt fired
+		GPIOB->BSRR = 1<<8; // Buzzer on
+		Delay(50000);
+		GPIOB->BRR = 1<<8; // Buzzer off
+
+		// DEBUG: Show raw received byte on screen
+		showString(10, 220, "Got byte:", RED, WHITE);
+		showNumber(100, 220, temp, 3, RED, WHITE);
+
+		// Accept '0'-'7' as valid seed
+		if(temp >= '0' && temp <= '7')
 		{
 			randomSeed = temp - '0';
+			usartReceived = 1;
+		}
+		// Also accept raw 0-7 (in case sent as binary not ASCII)
+		else if(temp <= 7)
+		{
+			randomSeed = temp;
 			usartReceived = 1;
 		}
 	}
