@@ -204,7 +204,7 @@ void EXTI2_IRQHandler(void)
 }
 
 /**
-  * @brief  EXTI3 interrupt handler (KEY_UP - Toggle difficulty or Pause)
+  * @brief  EXTI3 interrupt handler (KEY1 - Toggle difficulty or Pause)
   */
 void EXTI3_IRQHandler(void)
 {
@@ -215,11 +215,13 @@ void EXTI3_IRQHandler(void)
 		if(currentState == STATE_DIFFICULTY_SELECT)
 		{
 			difficulty = 1 - difficulty; // Toggle difficulty Easy <-> Hard
+			extern void updateDifficultyScreen(void);
 			updateDifficultyScreen();
 		}
 		else if(currentState == STATE_PLAYING)
 		{
 			currentState = STATE_PAUSED;
+			extern void showPauseScreen(void);
 			showPauseScreen();
 		}
 		else if(currentState == STATE_PAUSED)

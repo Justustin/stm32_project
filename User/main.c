@@ -74,9 +74,9 @@ int main(void)
 				// Wait for USART random seed
 				if(usartReceived)
 				{
-					// Display received seed
-					showString(50, 450, "Received: ", RED, WHITE);
-					showNumber(200, 450, randomSeed, 1, RED, WHITE);
+					// Display received seed (fixed for 2.8" LCD)
+					showString(10, 200, "Received: ", RED, WHITE);
+					showNumber(90, 200, randomSeed, 1, RED, WHITE);
 					Delay(1000000);
 
 					// Start countdown
