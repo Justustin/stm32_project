@@ -192,37 +192,19 @@ void USART1_IRQHandler(void)
 }
 
 /**
-  * @brief  EXTI2 interrupt handler (KEY2 - Player A move left/right)
+  * @brief  EXTI2 interrupt handler (KEY2 - Not available on this board)
   */
 void EXTI2_IRQHandler(void)
 {
 	if(EXTI->PR & (1<<2)) // Check EXTI2 pending bit
 	{
-		Delay(10000); // Debounce delay
-
-		// For development without joypad: KEY2 can confirm Player B
-		if(currentState == STATE_DIFFICULTY_SELECT)
-		{
-			playerB_ready = 1;
-			updateDifficultyScreen();
-			// Check if both players are ready to proceed
-			if(playerA_ready)
-			{
-				currentState = STATE_WAIT_USART;
-				extern void showWaitUSARTScreen(void);
-				showWaitUSARTScreen();
-			}
-		}
-		else if(currentState == STATE_PLAYING)
-		{
-			movePlayerAPad(1); // Move right
-		}
+		// KEY2 not available on this board - no action
 		EXTI->PR = 1<<2; // Clear pending bit
 	}
 }
 
 /**
-  * @brief  EXTI3 interrupt handler (KEY1 - Pause/Unpause or difficulty)
+  * @brief  EXTI3 interrupt handler (KEY_UP - Toggle difficulty or Pause)
   */
 void EXTI3_IRQHandler(void)
 {
@@ -232,7 +214,7 @@ void EXTI3_IRQHandler(void)
 
 		if(currentState == STATE_DIFFICULTY_SELECT)
 		{
-			difficulty = 1 - difficulty; // Toggle difficulty
+			difficulty = 1 - difficulty; // Toggle difficulty Easy <-> Hard
 			updateDifficultyScreen();
 		}
 		else if(currentState == STATE_PLAYING)
@@ -252,7 +234,7 @@ void EXTI3_IRQHandler(void)
 }
 
 /**
-  * @brief  EXTI4 interrupt handler (KEY0 - Confirm or Player A move)
+  * @brief  EXTI4 interrupt handler (KEY0 - Start game or move pad)
   */
 void EXTI4_IRQHandler(void)
 {
@@ -262,15 +244,12 @@ void EXTI4_IRQHandler(void)
 
 		if(currentState == STATE_DIFFICULTY_SELECT)
 		{
+			// KEY0 starts the game immediately (skip player ready confirmation)
 			playerA_ready = 1;
-			updateDifficultyScreen();
-			// Check if both players are ready to proceed
-			if(playerB_ready)
-			{
-				currentState = STATE_WAIT_USART;
-				extern void showWaitUSARTScreen(void);
-				showWaitUSARTScreen();
-			}
+			playerB_ready = 1; // Auto-confirm both players for solo development
+			currentState = STATE_WAIT_USART;
+			extern void showWaitUSARTScreen(void);
+			showWaitUSARTScreen();
 		}
 		else if(currentState == STATE_PLAYING)
 		{
