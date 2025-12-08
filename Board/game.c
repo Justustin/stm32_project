@@ -2,6 +2,9 @@
 #include "EIE3810_TFTLCD.h"
 #include "EIE3810_GPIO.h"
 
+// External functions
+extern void Delay(u32 count);
+
 // External variables
 extern GameState currentState;
 extern u8 difficulty;
