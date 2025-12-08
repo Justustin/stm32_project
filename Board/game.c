@@ -105,24 +105,29 @@ void showWelcomeScreen(void) {
 
 void showDifficultyScreen(void) {
     EIE3810_TFTLCD_FillScreen(WHITE);
-    showString(10, 80, "Select difficulty:", RED, WHITE);
+    showString(10, 60, "Select difficulty:", RED, WHITE);
 
     if(difficulty == 0) {
-        showString(10, 120, "> Easy", BLUE, WHITE);
-        showString(10, 140, "  Hard", BLACK, WHITE);
+        showString(10, 100, "> Easy", BLUE, WHITE);
+        showString(10, 120, "  Hard", BLACK, WHITE);
     } else {
-        showString(10, 120, "  Easy", BLACK, WHITE);
-        showString(10, 140, "> Hard", BLUE, WHITE);
+        showString(10, 100, "  Easy", BLACK, WHITE);
+        showString(10, 120, "> Hard", BLUE, WHITE);
     }
 
-    showString(10, 180, "KEY0: Select", RED, WHITE);
-    showString(10, 200, "KEY1: Toggle", RED, WHITE);
+    showString(10, 160, "KEY1: Toggle", RED, WHITE);
+    showString(10, 180, "KEY0: Player A Ready", RED, WHITE);
+    showString(10, 200, "KEY_UP: Player B Ready", RED, WHITE);
 
     if(playerA_ready) {
         showString(10, 240, "Player A: Ready", GREEN, WHITE);
+    } else {
+        showString(10, 240, "Player A: Not Ready", GRAY, WHITE);
     }
     if(playerB_ready) {
         showString(10, 260, "Player B: Ready", GREEN, WHITE);
+    } else {
+        showString(10, 260, "Player B: Not Ready", GRAY, WHITE);
     }
 }
 

@@ -192,6 +192,40 @@ void USART1_IRQHandler(void)
 }
 
 /**
+  * @brief  EXTI0 interrupt handler (KEY_UP - Player B ready)
+  */
+void EXTI0_IRQHandler(void)
+{
+	if(EXTI->PR & (1<<0)) // Check EXTI0 pending bit
+	{
+		Delay(10000); // Debounce delay
+
+		if(currentState == STATE_DIFFICULTY_SELECT)
+		{
+			// KEY_UP sets Player B ready
+			playerB_ready = 1;
+			extern void updateDifficultyScreen(void);
+			updateDifficultyScreen();
+
+			// Check if both players are ready
+			if(playerA_ready && playerB_ready)
+			{
+				currentState = STATE_WAIT_USART;
+				extern void showWaitUSARTScreen(void);
+				showWaitUSARTScreen();
+			}
+		}
+		else if(currentState == STATE_PLAYING)
+		{
+			// KEY_UP can also be used to move Player A pad right during gameplay
+			movePlayerAPad(1); // Move right
+		}
+
+		EXTI->PR = 1<<0; // Clear pending bit
+	}
+}
+
+/**
   * @brief  EXTI2 interrupt handler (KEY2 - Not available on this board)
   */
 void EXTI2_IRQHandler(void)
@@ -236,7 +270,7 @@ void EXTI3_IRQHandler(void)
 }
 
 /**
-  * @brief  EXTI4 interrupt handler (KEY0 - Start game or move pad)
+  * @brief  EXTI4 interrupt handler (KEY0 - Player A ready or move pad left)
   */
 void EXTI4_IRQHandler(void)
 {
@@ -246,12 +280,18 @@ void EXTI4_IRQHandler(void)
 
 		if(currentState == STATE_DIFFICULTY_SELECT)
 		{
-			// KEY0 starts the game immediately (skip player ready confirmation)
+			// KEY0 sets Player A ready
 			playerA_ready = 1;
-			playerB_ready = 1; // Auto-confirm both players for solo development
-			currentState = STATE_WAIT_USART;
-			extern void showWaitUSARTScreen(void);
-			showWaitUSARTScreen();
+			extern void updateDifficultyScreen(void);
+			updateDifficultyScreen();
+
+			// Check if both players are ready
+			if(playerA_ready && playerB_ready)
+			{
+				currentState = STATE_WAIT_USART;
+				extern void showWaitUSARTScreen(void);
+				showWaitUSARTScreen();
+			}
 		}
 		else if(currentState == STATE_PLAYING)
 		{

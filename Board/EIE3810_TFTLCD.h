@@ -8,6 +8,7 @@
 #define GREEN		0x07E0
 #define RED			0xF800
 #define YELLOW	0xFFE0
+#define GRAY		0x8410
 
 #define LCD_COMMAND			((u32) 0x6C000000)
 #define LCD_DATA			((u32) 0x6C000800)
