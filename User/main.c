@@ -47,19 +47,19 @@ int main(void)
 	EIE3810_NVIC_SetPriorityGroup(2);
 	EIE3810_TIM3_Init(499, 719); // Timer for game updates and joypad reading (10ms period)
 
-	// Show welcome screen
+	// Show welcome screen and wait for KEY0
+	currentState = STATE_WELCOME;
 	showWelcomeScreen();
-	Delay(3000000); // Wait 3 seconds
-
-	// Start difficulty selection
-	currentState = STATE_DIFFICULTY_SELECT;
-	showDifficultyScreen();
 
 	// Main game loop
 	while(1)
 	{
 		switch(currentState)
 		{
+			case STATE_WELCOME:
+				// Wait for KEY0 press (handled in EXTI4 interrupt)
+				break;
+
 			case STATE_DIFFICULTY_SELECT:
 				// Wait for both players to be ready
 				if(playerA_ready && playerB_ready)
@@ -102,16 +102,8 @@ int main(void)
 				break;
 
 			case STATE_GAME_OVER:
-				showGameOverScreen();
-				Delay(3000000); // Wait 3 seconds
-
-				// Reset game state
-				currentState = STATE_DIFFICULTY_SELECT;
-				difficulty = 0;
-				playerA_ready = 0;
-				playerB_ready = 0;
-				usartReceived = 0;
-				showDifficultyScreen();
+				// Show game over screen once, then wait for KEY0
+				// (state transition handled in EXTI4 interrupt)
 				break;
 
 			default:

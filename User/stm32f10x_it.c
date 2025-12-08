@@ -291,7 +291,7 @@ void EXTI3_IRQHandler(void)
 }
 
 /**
-  * @brief  EXTI4 interrupt handler (KEY0 - Player A ready or move pad left)
+  * @brief  EXTI4 interrupt handler (KEY0 - Multi-purpose button)
   */
 void EXTI4_IRQHandler(void)
 {
@@ -299,7 +299,14 @@ void EXTI4_IRQHandler(void)
 	{
 		Delay(10000); // Debounce delay
 
-		if(currentState == STATE_DIFFICULTY_SELECT)
+		if(currentState == STATE_WELCOME)
+		{
+			// KEY0 starts the game from welcome screen
+			currentState = STATE_DIFFICULTY_SELECT;
+			extern void showDifficultyScreen(void);
+			showDifficultyScreen();
+		}
+		else if(currentState == STATE_DIFFICULTY_SELECT)
 		{
 			// KEY0 sets Player A ready
 			playerA_ready = 1;
@@ -317,6 +324,23 @@ void EXTI4_IRQHandler(void)
 		else if(currentState == STATE_PLAYING)
 		{
 			movePlayerAPad(-1); // Move left
+		}
+		else if(currentState == STATE_GAME_OVER)
+		{
+			// KEY0 restarts the game from game over screen
+			// Reset game state
+			extern u8 difficulty;
+			extern u8 playerA_ready;
+			extern u8 playerB_ready;
+			extern u8 usartReceived;
+			difficulty = 0;
+			playerA_ready = 0;
+			playerB_ready = 0;
+			usartReceived = 0;
+
+			currentState = STATE_DIFFICULTY_SELECT;
+			extern void showDifficultyScreen(void);
+			showDifficultyScreen();
 		}
 
 		EXTI->PR = 1<<4; // Clear pending bit

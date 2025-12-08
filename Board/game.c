@@ -98,11 +98,19 @@ void drawPads(void) {
  ****************************************/
 
 void showWelcomeScreen(void) {
-    EIE3810_TFTLCD_FillScreen(WHITE);
-    showString(10, 100, "Welcome to Project!", BLUE, WHITE);
-    showString(10, 130, "Final Lab Game", RED, WHITE);
-    showString(10, 160, "Are you ready?", RED, WHITE);
-    showString(10, 190, "Let's start!", GREEN, WHITE);
+    EIE3810_TFTLCD_FillScreen(BLUE);
+
+    // Match PDF design (Fig. 3)
+    showString(20, 80, "Welcome to mini", WHITE, BLUE);
+    showString(20, 100, "Project!", WHITE, BLUE);
+
+    showString(20, 140, "This is the Final Lab.", YELLOW, BLUE);
+
+    showString(20, 180, "Are you ready?", YELLOW, BLUE);
+
+    showString(20, 220, "OK! Let's start.", GREEN, BLUE);
+
+    showString(20, 280, "Press KEY0...", WHITE, BLUE);
 }
 
 void showDifficultyScreen(void) {
@@ -175,13 +183,22 @@ void showPauseScreen(void) {
 void showGameOverScreen(void) {
     EIE3810_TFTLCD_FillScreen(BLACK);
 
+    showString(60, 60, "GAME OVER", RED, BLACK);
+
     if(winner == 1) {
-        showString(50, 140, "Player A Wins!", GREEN, BLACK);
+        showString(40, 120, "Player A Wins!", GREEN, BLACK);
     } else if(winner == 2) {
-        showString(50, 140, "Player B Wins!", GREEN, BLACK);
+        showString(40, 120, "Player B Wins!", GREEN, BLACK);
     }
 
-    showString(50, 180, "Restarting...", WHITE, BLACK);
+    // Show game stats
+    showString(20, 180, "Time:", WHITE, BLACK);
+    showNumber(80, 180, gameTime / 100, 5, YELLOW, BLACK);
+
+    showString(20, 210, "Bounces:", WHITE, BLACK);
+    showNumber(100, 210, bounceCount, 4, YELLOW, BLACK);
+
+    showString(20, 270, "Press KEY0 to restart", WHITE, BLACK);
 }
 
 /****************************************
@@ -288,18 +305,21 @@ void updateBallPosition(void) {
         Buzzer_Off();
     }
     
-    // Check game over
+    // Check game over - Player B wins (ball passed Player A)
     if(ballY >= SCREEN_HEIGHT) {
         winner = 2;
         currentState = STATE_GAME_OVER;
         gameStarted = 0;
+        showGameOverScreen();
         return;
     }
-    
+
+    // Check game over - Player A wins (ball passed Player B)
     if(ballY <= 0) {
         winner = 1;
         currentState = STATE_GAME_OVER;
         gameStarted = 0;
+        showGameOverScreen();
         return;
     }
     
