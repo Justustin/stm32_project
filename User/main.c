@@ -76,7 +76,7 @@ int main(void)
 				{
 					// Show seed received screen
 					showSeedReceivedScreen(randomSeed);
-					Delay(3000000);  // Show for 3 seconds
+					Delay(30000000);  // Show for ~3 seconds (larger value for 72MHz)
 
 					// Start countdown (3, 2, 1, GO!)
 					currentState = STATE_COUNTDOWN;

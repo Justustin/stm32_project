@@ -188,15 +188,6 @@ void USART1_IRQHandler(void)
 	{
 		temp = USART1->DR; // Read received data
 
-		// DEBUG: Buzz to confirm interrupt fired
-		GPIOB->BSRR = 1<<8; // Buzzer on
-		Delay(50000);
-		GPIOB->BRR = 1<<8; // Buzzer off
-
-		// DEBUG: Show raw received byte on screen
-		showString(10, 220, "Got byte:", RED, WHITE);
-		showNumber(100, 220, temp, 3, RED, WHITE);
-
 		// Accept '0'-'7' as valid seed
 		if(temp >= '0' && temp <= '7')
 		{

@@ -166,21 +166,19 @@ void startCountdown(void) {
 
     // Show "3"
     showString(100, 140, "  3  ", RED, WHITE);
-    Delay(2000000);
+    Delay(15000000);  // ~1.5 seconds
 
     // Show "2"
     showString(100, 140, "  2  ", RED, WHITE);
-    Delay(2000000);
+    Delay(15000000);  // ~1.5 seconds
 
     // Show "1"
     showString(100, 140, "  1  ", RED, WHITE);
-    Delay(2000000);
+    Delay(15000000);  // ~1.5 seconds
 
     // Show "GO!"
     showString(90, 140, " GO! ", GREEN, WHITE);
-    Delay(1000000);
-
-    EIE3810_TFTLCD_FillRectangle(100, 24, 150, 16, WHITE);
+    Delay(10000000);  // ~1 second
 }
 
 void showPauseScreen(void) {
