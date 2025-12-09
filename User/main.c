@@ -12,6 +12,7 @@ void EIE3810_TIM3_Init(u16 arr, u16 psc);
 void EIE3810_TIM4_Init(u16 arr, u16 psc);
 void EIE3810_NVIC_SetPriorityGroup(u8);
 void Delay(u32);
+void DisplayDelay(u32);
 void JOYPAD_Init(void);
 void JOYPAD_Delay(u16 t);
 u8 JOYPAD_Read(void);
@@ -79,7 +80,7 @@ int main(void)
 
 					// Show seed received screen
 					showSeedReceivedScreen(randomSeed);
-					Delay(30000000);  // Show for ~3 seconds (larger value for 72MHz)
+					DisplayDelay(30000000);  // Show for ~3 seconds (larger value for 72MHz)
 
 					// Start countdown (3, 2, 1, GO!)
 					currentState = STATE_COUNTDOWN;
@@ -209,5 +210,12 @@ void EIE3810_TIM4_Init(u16 arr, u16 psc)
 void Delay(u32 count)
 {
 	u32 i;
+	for(i = 0; i < count; i++);
+}
+
+// Separate delay function for display screens (not optimized away)
+void DisplayDelay(u32 count)
+{
+	volatile u32 i;
 	for(i = 0; i < count; i++);
 }

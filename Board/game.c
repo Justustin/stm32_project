@@ -4,6 +4,7 @@
 
 // External functions
 extern void Delay(u32 count);
+extern void DisplayDelay(u32 count);
 
 // External variables (volatile - modified in interrupts)
 extern volatile GameState currentState;
@@ -166,19 +167,19 @@ void startCountdown(void) {
 
     // Show "3"
     showString(100, 140, "  3  ", RED, WHITE);
-    Delay(15000000);  // ~1.5 seconds
+    DisplayDelay(15000000);  // ~1.5 seconds
 
     // Show "2"
     showString(100, 140, "  2  ", RED, WHITE);
-    Delay(15000000);  // ~1.5 seconds
+    DisplayDelay(15000000);  // ~1.5 seconds
 
     // Show "1"
     showString(100, 140, "  1  ", RED, WHITE);
-    Delay(15000000);  // ~1.5 seconds
+    DisplayDelay(15000000);  // ~1.5 seconds
 
     // Show "GO!"
     showString(90, 140, " GO! ", GREEN, WHITE);
-    Delay(10000000);  // ~1 second
+    DisplayDelay(10000000);  // ~1 second
 }
 
 void showPauseScreen(void) {
