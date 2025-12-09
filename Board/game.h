@@ -24,6 +24,7 @@ void showWelcomeScreen(void);
 void showDifficultyScreen(void);
 void updateDifficultyScreen(void);
 void showWaitUSARTScreen(void);
+void showSeedReceivedScreen(u8 seed);
 void startCountdown(void);
 void updateGameDisplay(void);
 void showPauseScreen(void);

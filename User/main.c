@@ -74,19 +74,16 @@ int main(void)
 				// Wait for USART random seed
 				if(usartReceived)
 				{
-					// Display received seed (fixed for 2.8" LCD)
-					showString(10, 200, "Received: ", RED, WHITE);
-					showNumber(90, 200, randomSeed, 1, RED, WHITE);
-					Delay(1000000);
+					// Show seed received screen
+					showSeedReceivedScreen(randomSeed);
+					Delay(3000000);  // Show for 3 seconds
 
-					// Start countdown
+					// Start countdown (3, 2, 1, GO!)
 					currentState = STATE_COUNTDOWN;
 					startCountdown();
 
-					// Initialize game
+					// Initialize game and start playing
 					initGame(randomSeed, difficulty);
-
-					// Start playing
 					currentState = STATE_PLAYING;
 					usartReceived = 0;
 				}

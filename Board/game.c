@@ -146,31 +146,39 @@ void updateDifficultyScreen(void) {
 }
 
 void showWaitUSARTScreen(void) {
-    EIE3810_TFTLCD_FillScreen(WHITE);
-    showString(10, 140, "Waiting for USART...", RED, WHITE);
-    showString(10, 170, "Send value 0-7", BLUE, WHITE);
+    EIE3810_TFTLCD_FillScreen(BLUE);
+    showString(10, 120, "Use USART for a", YELLOW, BLUE);
+    showString(10, 140, "random direction.", YELLOW, BLUE);
+    showString(10, 180, "Send value 0-7", WHITE, BLUE);
+}
+
+void showSeedReceivedScreen(u8 seed) {
+    EIE3810_TFTLCD_FillScreen(BLUE);
+    showString(30, 100, "Random seed:", WHITE, BLUE);
+    showNumber(180, 100, seed, 1, YELLOW, BLUE);
+    showString(30, 150, "Direction set!", GREEN, BLUE);
+    showString(30, 200, "Get ready...", WHITE, BLUE);
 }
 
 void startCountdown(void) {
     EIE3810_TFTLCD_FillScreen(WHITE);
+    EIE3810_TFTLCD_DrawRectangle(0, 0, SCREEN_WIDTH-1, SCREEN_HEIGHT-1, BLACK);
 
-    drawPads();
-    EIE3810_TFTLCD_DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, BLACK);
+    // Show "3"
+    showString(100, 140, "  3  ", RED, WHITE);
+    Delay(2000000);
 
-    showString(110, 150, "3", RED, WHITE);
+    // Show "2"
+    showString(100, 140, "  2  ", RED, WHITE);
+    Delay(2000000);
+
+    // Show "1"
+    showString(100, 140, "  1  ", RED, WHITE);
+    Delay(2000000);
+
+    // Show "GO!"
+    showString(90, 140, " GO! ", GREEN, WHITE);
     Delay(1000000);
-
-    EIE3810_TFTLCD_FillRectangle(110, 8, 150, 16, WHITE);  // Clear
-    showString(110, 150, "2", RED, WHITE);
-    Delay(1000000);
-
-    EIE3810_TFTLCD_FillRectangle(110, 8, 150, 16, WHITE);
-    showString(110, 150, "1", RED, WHITE);
-    Delay(1000000);
-
-    EIE3810_TFTLCD_FillRectangle(110, 24, 150, 16, WHITE);
-    showString(100, 150, "GO!", GREEN, WHITE);
-    Delay(500000);
 
     EIE3810_TFTLCD_FillRectangle(100, 24, 150, 16, WHITE);
 }
