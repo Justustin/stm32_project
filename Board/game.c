@@ -23,6 +23,10 @@ extern volatile u8 playerB_ready;
 #define INITIAL_SPEED_DIVIDER 3  // Initial ball speed (higher = slower)
 #define MIN_SPEED_DIVIDER 1      // Maximum ball speed
 
+// Additional colors not in header
+#define CYAN    0x07FF    // Light blue
+#define MAGENTA 0xF81F    // Pink/purple
+
 // Power-up constants
 #define POWERUP_SIZE 12       // Size of power-up box
 #define POWERUP_DURATION 500  // How long power-up effect lasts (in game frames)
