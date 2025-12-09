@@ -154,13 +154,13 @@ void SysTick_Handler(void)
 {
 }*/
 
-// External variables from main.c
-extern u8 difficulty;
-extern u8 playerA_ready;
-extern u8 playerB_ready;
-extern u8 usartReceived;
-extern u8 randomSeed;
-extern GameState currentState;
+// External variables from main.c (volatile - shared with interrupts)
+extern volatile u8 difficulty;
+extern volatile u8 playerA_ready;
+extern volatile u8 playerB_ready;
+extern volatile u8 usartReceived;
+extern volatile u8 randomSeed;
+extern volatile GameState currentState;
 
 // External functions from game.c
 extern void movePlayerAPad(s8 direction);
@@ -319,11 +319,7 @@ void EXTI4_IRQHandler(void)
 		else if(currentState == STATE_GAME_OVER)
 		{
 			// KEY0 restarts the game from game over screen
-			// Reset game state
-			extern u8 difficulty;
-			extern u8 playerA_ready;
-			extern u8 playerB_ready;
-			extern u8 usartReceived;
+			// Reset game state (variables are already extern at file scope)
 			difficulty = 0;
 			playerA_ready = 0;
 			playerB_ready = 0;

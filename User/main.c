@@ -16,13 +16,13 @@ void JOYPAD_Init(void);
 void JOYPAD_Delay(u16 t);
 u8 JOYPAD_Read(void);
 
-// Game state variables
-GameState currentState = STATE_WELCOME;
-u8 difficulty = 0; // 0 = Easy, 1 = Hard
-u8 playerA_ready = 0;
-u8 playerB_ready = 0;
-u8 usartReceived = 0;
-u8 randomSeed = 0;
+// Game state variables (volatile for variables modified in interrupts)
+volatile GameState currentState = STATE_WELCOME;
+volatile u8 difficulty = 0; // 0 = Easy, 1 = Hard
+volatile u8 playerA_ready = 0;
+volatile u8 playerB_ready = 0;
+volatile u8 usartReceived = 0;
+volatile u8 randomSeed = 0;
 
 int main(void)
 {
@@ -202,6 +202,6 @@ void EIE3810_TIM4_Init(u16 arr, u16 psc)
 
 void Delay(u32 count)
 {
-	u32 i;
+	volatile u32 i;
 	for(i = 0; i < count; i++);
 }

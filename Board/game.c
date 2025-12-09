@@ -5,11 +5,11 @@
 // External functions
 extern void Delay(u32 count);
 
-// External variables
-extern GameState currentState;
-extern u8 difficulty;
-extern u8 playerA_ready;
-extern u8 playerB_ready;
+// External variables (volatile - modified in interrupts)
+extern volatile GameState currentState;
+extern volatile u8 difficulty;
+extern volatile u8 playerA_ready;
+extern volatile u8 playerB_ready;
 
 // Game constants
 #define BALL_RADIUS 6
