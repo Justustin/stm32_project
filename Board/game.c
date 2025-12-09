@@ -169,18 +169,16 @@ void drawPowerup(void) {
 
     u16 color = getPowerupColor(powerupType);
 
-    // Draw a filled square with border
+    // Draw a filled square (the power-up box)
     EIE3810_TFTLCD_FillRectangle(powerupX, POWERUP_SIZE, powerupY, POWERUP_SIZE, color);
-    EIE3810_TFTLCD_DrawRectangle(powerupX, powerupY,
-                                  powerupX + POWERUP_SIZE, powerupY + POWERUP_SIZE, BLACK);
 
-    // Draw symbol inside based on type
+    // Draw symbol inside based on type (centered in the box)
     if(powerupType == POWERUP_SPEED_UP || powerupType == POWERUP_SPEED_DOWN) {
         // "S" for speed
-        EIE3810_TFTLCD_ShowChar(powerupX + 2, powerupY - 2, 'S', WHITE, color);
+        EIE3810_TFTLCD_ShowChar(powerupX + 2, powerupY, 'S', WHITE, color);
     } else {
         // "P" for paddle
-        EIE3810_TFTLCD_ShowChar(powerupX + 2, powerupY - 2, 'P', WHITE, color);
+        EIE3810_TFTLCD_ShowChar(powerupX + 2, powerupY, 'P', WHITE, color);
     }
 }
 
