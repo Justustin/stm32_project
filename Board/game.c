@@ -14,11 +14,13 @@ extern volatile u8 playerB_ready;
 
 // Game constants
 #define BALL_RADIUS 6
-#define PAD_WIDTH 50      // Pong-style paddle width
-#define PAD_HEIGHT 8      // Pong-style paddle height
-#define SCREEN_WIDTH 240    // 2.8" TFT LCD width
-#define SCREEN_HEIGHT 320   // 2.8" TFT LCD height
-#define BALL_SPEED_DIVIDER 3  // Ball moves every N frames (higher = slower)
+#define INITIAL_PAD_WIDTH 50  // Starting paddle width
+#define MIN_PAD_WIDTH 20      // Minimum paddle width
+#define PAD_HEIGHT 8          // Pong-style paddle height
+#define SCREEN_WIDTH 240      // 2.8" TFT LCD width
+#define SCREEN_HEIGHT 320     // 2.8" TFT LCD height
+#define INITIAL_SPEED_DIVIDER 3  // Initial ball speed (higher = slower)
+#define MIN_SPEED_DIVIDER 1      // Maximum ball speed
 
 // Ball state
 u16 ballX = 120;
@@ -28,12 +30,14 @@ s8 ballVy = 1;
 u16 oldBallX = 120;
 u16 oldBallY = 160;
 u8 frameCounter = 0;  // For slowing down ball
+u8 currentSpeedDivider = INITIAL_SPEED_DIVIDER;  // Current ball speed
 
-// Pad positions
+// Pad positions and size
 u16 padA_x = 95;   // Player A (bottom) - centered
 u16 padB_x = 95;   // Player B (top) - centered
 u16 padA_y = 305;  // Near bottom
 u16 padB_y = 8;    // Near top
+u8 currentPadWidth = INITIAL_PAD_WIDTH;  // Current paddle width (shrinks over time)
 
 // Game stats
 u32 gameTime = 0;
@@ -41,6 +45,8 @@ u16 bounceCount = 0;
 u8 gameStarted = 0;
 u8 winner = 0;
 u8 speedMultiplier = 1;
+u16 lastSpeedIncreaseBounce = 0;   // Track when speed last increased
+u16 lastPadShrinkBounce = 0;       // Track when pads last shrunk
 
 /****************************************
  * Helper Functions
@@ -88,10 +94,10 @@ void drawBall(void) {
 void drawPads(void) {
     // Player A pad (bottom) - Yellow
     // YOUR function signature: (start_x, length_x, start_y, length_y, color)
-    EIE3810_TFTLCD_FillRectangle(padA_x, PAD_WIDTH, padA_y, PAD_HEIGHT, YELLOW);
-    
+    EIE3810_TFTLCD_FillRectangle(padA_x, currentPadWidth, padA_y, PAD_HEIGHT, YELLOW);
+
     // Player B pad (top) - Blue
-    EIE3810_TFTLCD_FillRectangle(padB_x, PAD_WIDTH, padB_y, PAD_HEIGHT, BLUE);
+    EIE3810_TFTLCD_FillRectangle(padB_x, currentPadWidth, padB_y, PAD_HEIGHT, BLUE);
 }
 
 /****************************************
@@ -190,20 +196,27 @@ void showPauseScreen(void) {
 void showGameOverScreen(void) {
     EIE3810_TFTLCD_FillScreen(BLACK);
 
-    showString(60, 60, "GAME OVER", RED, BLACK);
+    showString(60, 40, "GAME OVER", RED, BLACK);
 
     if(winner == 1) {
-        showString(40, 120, "Player A Wins!", GREEN, BLACK);
+        showString(40, 80, "Player A Wins!", GREEN, BLACK);
     } else if(winner == 2) {
-        showString(40, 120, "Player B Wins!", GREEN, BLACK);
+        showString(40, 80, "Player B Wins!", GREEN, BLACK);
     }
 
     // Show game stats
-    showString(20, 180, "Time:", WHITE, BLACK);
-    showNumber(80, 180, gameTime / 100, 5, YELLOW, BLACK);
+    showString(20, 130, "Time:", WHITE, BLACK);
+    showNumber(80, 130, gameTime / 100, 5, YELLOW, BLACK);
 
-    showString(20, 210, "Bounces:", WHITE, BLACK);
-    showNumber(100, 210, bounceCount, 4, YELLOW, BLACK);
+    showString(20, 160, "Bounces:", WHITE, BLACK);
+    showNumber(100, 160, bounceCount, 4, YELLOW, BLACK);
+
+    // Show final difficulty stats
+    showString(20, 190, "Final Speed:", WHITE, BLACK);
+    showNumber(130, 190, INITIAL_SPEED_DIVIDER - currentSpeedDivider + 1, 1, YELLOW, BLACK);
+
+    showString(20, 220, "Pad Size:", WHITE, BLACK);
+    showNumber(100, 220, currentPadWidth, 2, YELLOW, BLACK);
 
     showString(20, 270, "Press KEY0 to restart", WHITE, BLACK);
 }
@@ -217,21 +230,30 @@ void initGame(u8 seed, u8 diff) {
     ballY = SCREEN_HEIGHT / 2;
     oldBallX = ballX;
     oldBallY = ballY;
-    
-    padA_x = (SCREEN_WIDTH - PAD_WIDTH) / 2;
-    padB_x = (SCREEN_WIDTH - PAD_WIDTH) / 2;
-    
+
+    // Reset paddle width and positions
+    currentPadWidth = INITIAL_PAD_WIDTH;
+    padA_x = (SCREEN_WIDTH - currentPadWidth) / 2;
+    padB_x = (SCREEN_WIDTH - currentPadWidth) / 2;
+
     gameTime = 0;
     bounceCount = 0;
     gameStarted = 1;
     winner = 0;
-    
+
+    // Reset speed and tracking variables
+    currentSpeedDivider = INITIAL_SPEED_DIVIDER;
+    lastSpeedIncreaseBounce = 0;
+    lastPadShrinkBounce = 0;
+
     if(diff == 0) {
         speedMultiplier = 1;
     } else {
         speedMultiplier = 2;
+        // Hard mode starts faster
+        currentSpeedDivider = 2;
     }
-    
+
     // Reset frame counter
     frameCounter = 0;
 
@@ -262,9 +284,9 @@ void updateBallPosition(void) {
 
     gameTime++;
 
-    // Frame skipping for slower ball movement
+    // Frame skipping for slower ball movement (uses dynamic speed)
     frameCounter++;
-    if(frameCounter < BALL_SPEED_DIVIDER) {
+    if(frameCounter < currentSpeedDivider) {
         return; // Skip this frame
     }
     frameCounter = 0;
@@ -274,7 +296,26 @@ void updateBallPosition(void) {
 
     ballX += ballVx;
     ballY += ballVy;
-    
+
+    // ========== IMPROVEMENT: Speed increase every 5 bounces ==========
+    if(bounceCount >= lastSpeedIncreaseBounce + 5) {
+        lastSpeedIncreaseBounce = bounceCount;
+        if(currentSpeedDivider > MIN_SPEED_DIVIDER) {
+            currentSpeedDivider--;  // Faster ball!
+        }
+    }
+
+    // ========== IMPROVEMENT: Shrink paddles every 10 bounces ==========
+    if(bounceCount >= lastPadShrinkBounce + 10) {
+        lastPadShrinkBounce = bounceCount;
+        if(currentPadWidth > MIN_PAD_WIDTH) {
+            // Clear old pads before shrinking
+            EIE3810_TFTLCD_FillRectangle(padA_x, currentPadWidth, padA_y, PAD_HEIGHT, WHITE);
+            EIE3810_TFTLCD_FillRectangle(padB_x, currentPadWidth, padB_y, PAD_HEIGHT, WHITE);
+            currentPadWidth -= 5;  // Shrink by 5 pixels
+        }
+    }
+
     // Left/right walls
     if(ballX <= BALL_RADIUS || ballX >= SCREEN_WIDTH - BALL_RADIUS) {
         ballVx = -ballVx;
@@ -285,33 +326,53 @@ void updateBallPosition(void) {
         Delay(5000);
         Buzzer_Off();
     }
-    
-    // Player A's pad (bottom)
-    if(ballY + BALL_RADIUS >= padA_y && 
+
+    // Player A's pad (bottom) with angle-based reflection
+    if(ballY + BALL_RADIUS >= padA_y &&
        ballY + BALL_RADIUS <= padA_y + PAD_HEIGHT &&
-       ballX >= padA_x && 
-       ballX <= padA_x + PAD_WIDTH) {
+       ballX >= padA_x &&
+       ballX <= padA_x + currentPadWidth) {
         ballVy = -ballVy;
         ballY = padA_y - BALL_RADIUS;
+
+        // ========== IMPROVEMENT: Angle-based reflection ==========
+        // Hit left edge = ball goes left, hit right edge = ball goes right
+        s16 hitPos = ballX - padA_x;  // Position on paddle (0 to currentPadWidth)
+        if(hitPos < currentPadWidth / 3) {
+            ballVx = -1;  // Left third = go left
+        } else if(hitPos > (currentPadWidth * 2) / 3) {
+            ballVx = 1;   // Right third = go right
+        }
+        // Middle third keeps current direction
+
         bounceCount++;
         Buzzer_On();
         Delay(5000);
         Buzzer_Off();
     }
-    
-    // Player B's pad (top)
-    if(ballY - BALL_RADIUS <= padB_y + PAD_HEIGHT && 
+
+    // Player B's pad (top) with angle-based reflection
+    if(ballY - BALL_RADIUS <= padB_y + PAD_HEIGHT &&
        ballY - BALL_RADIUS >= padB_y &&
-       ballX >= padB_x && 
-       ballX <= padB_x + PAD_WIDTH) {
+       ballX >= padB_x &&
+       ballX <= padB_x + currentPadWidth) {
         ballVy = -ballVy;
         ballY = padB_y + PAD_HEIGHT + BALL_RADIUS;
+
+        // ========== IMPROVEMENT: Angle-based reflection ==========
+        s16 hitPos = ballX - padB_x;
+        if(hitPos < currentPadWidth / 3) {
+            ballVx = -1;  // Left third = go left
+        } else if(hitPos > (currentPadWidth * 2) / 3) {
+            ballVx = 1;   // Right third = go right
+        }
+
         bounceCount++;
         Buzzer_On();
         Delay(5000);
         Buzzer_Off();
     }
-    
+
     // Check game over - Player B wins (ball passed Player A)
     if(ballY >= SCREEN_HEIGHT) {
         winner = 2;
@@ -329,7 +390,7 @@ void updateBallPosition(void) {
         showGameOverScreen();
         return;
     }
-    
+
     clearBall();
     drawBall();
 
@@ -339,29 +400,29 @@ void updateBallPosition(void) {
 
 void movePlayerAPad(s8 direction) {
     if(currentState != STATE_PLAYING) return;
-    
-    // Clear old - YOUR function: (start_x, length_x, start_y, length_y, color)
-    EIE3810_TFTLCD_FillRectangle(padA_x, PAD_WIDTH, padA_y, PAD_HEIGHT, WHITE);
-    
+
+    // Clear old pad
+    EIE3810_TFTLCD_FillRectangle(padA_x, currentPadWidth, padA_y, PAD_HEIGHT, WHITE);
+
     padA_x += direction * 10;
-    
+
     if(padA_x < 0) padA_x = 0;
-    if(padA_x > SCREEN_WIDTH - PAD_WIDTH) padA_x = SCREEN_WIDTH - PAD_WIDTH;
-    
-    EIE3810_TFTLCD_FillRectangle(padA_x, PAD_WIDTH, padA_y, PAD_HEIGHT, YELLOW);
+    if(padA_x > SCREEN_WIDTH - currentPadWidth) padA_x = SCREEN_WIDTH - currentPadWidth;
+
+    EIE3810_TFTLCD_FillRectangle(padA_x, currentPadWidth, padA_y, PAD_HEIGHT, YELLOW);
 }
 
 void movePlayerBPad(s8 direction) {
     if(currentState != STATE_PLAYING) return;
-    
-    EIE3810_TFTLCD_FillRectangle(padB_x, PAD_WIDTH, padB_y, PAD_HEIGHT, WHITE);
-    
+
+    EIE3810_TFTLCD_FillRectangle(padB_x, currentPadWidth, padB_y, PAD_HEIGHT, WHITE);
+
     padB_x += direction * 10;
-    
+
     if(padB_x < 0) padB_x = 0;
-    if(padB_x > SCREEN_WIDTH - PAD_WIDTH) padB_x = SCREEN_WIDTH - PAD_WIDTH;
-    
-    EIE3810_TFTLCD_FillRectangle(padB_x, PAD_WIDTH, padB_y, PAD_HEIGHT, BLUE);
+    if(padB_x > SCREEN_WIDTH - currentPadWidth) padB_x = SCREEN_WIDTH - currentPadWidth;
+
+    EIE3810_TFTLCD_FillRectangle(padB_x, currentPadWidth, padB_y, PAD_HEIGHT, BLUE);
 }
 
 void handleJoypadInput(u8 data) {
