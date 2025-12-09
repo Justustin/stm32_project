@@ -74,6 +74,9 @@ int main(void)
 				// Wait for USART random seed
 				if(usartReceived)
 				{
+					// Disable TIM3 interrupt during display to prevent LCD corruption
+					TIM3->DIER &= ~(1<<0);
+
 					// Show seed received screen
 					showSeedReceivedScreen(randomSeed);
 					Delay(30000000);  // Show for ~3 seconds (larger value for 72MHz)
@@ -86,6 +89,9 @@ int main(void)
 					initGame(randomSeed, difficulty);
 					currentState = STATE_PLAYING;
 					usartReceived = 0;
+
+					// Re-enable TIM3 interrupt for gameplay
+					TIM3->DIER |= 1<<0;
 				}
 				break;
 
@@ -202,6 +208,6 @@ void EIE3810_TIM4_Init(u16 arr, u16 psc)
 
 void Delay(u32 count)
 {
-	volatile u32 i;
+	u32 i;
 	for(i = 0; i < count; i++);
 }
