@@ -16,11 +16,24 @@ extern volatile u8 playerB_ready;
 #define BALL_RADIUS 6
 #define INITIAL_PAD_WIDTH 50  // Starting paddle width
 #define MIN_PAD_WIDTH 20      // Minimum paddle width
+#define MAX_PAD_WIDTH 80      // Maximum paddle width (for power-up)
 #define PAD_HEIGHT 8          // Pong-style paddle height
 #define SCREEN_WIDTH 240      // 2.8" TFT LCD width
 #define SCREEN_HEIGHT 320     // 2.8" TFT LCD height
 #define INITIAL_SPEED_DIVIDER 3  // Initial ball speed (higher = slower)
 #define MIN_SPEED_DIVIDER 1      // Maximum ball speed
+
+// Power-up constants
+#define POWERUP_SIZE 12       // Size of power-up box
+#define POWERUP_DURATION 500  // How long power-up effect lasts (in game frames)
+#define POWERUP_SPAWN_INTERVAL 300  // Frames between power-up spawns
+
+// Power-up types
+#define POWERUP_NONE 0
+#define POWERUP_SPEED_UP 1    // Ball speeds up (bad for catcher)
+#define POWERUP_SPEED_DOWN 2  // Ball slows down (good)
+#define POWERUP_PAD_GROW 3    // Your paddle grows
+#define POWERUP_PAD_SHRINK 4  // Your paddle shrinks (bad)
 
 // Ball state
 u16 ballX = 120;
@@ -47,6 +60,17 @@ u8 winner = 0;
 u8 speedMultiplier = 1;
 u16 lastSpeedIncreaseBounce = 0;   // Track when speed last increased
 u16 lastPadShrinkBounce = 0;       // Track when pads last shrunk
+
+// Power-up state
+u8 powerupActive = 0;         // Is there a power-up on screen?
+u16 powerupX = 0;             // Power-up X position
+u16 powerupY = 0;             // Power-up Y position
+u8 powerupType = POWERUP_NONE; // Current power-up type
+u16 powerupTimer = 0;         // Timer for power-up effect duration
+u8 activePowerupType = POWERUP_NONE;  // Currently active effect
+u16 lastPowerupSpawn = 0;     // When last power-up spawned
+u8 speedBoostActive = 0;      // Is speed boost/slow active?
+s8 originalSpeedDivider = 0;  // Store original speed when modified
 
 /****************************************
  * Helper Functions
@@ -98,6 +122,155 @@ void drawPads(void) {
 
     // Player B pad (top) - Blue
     EIE3810_TFTLCD_FillRectangle(padB_x, currentPadWidth, padB_y, PAD_HEIGHT, BLUE);
+}
+
+/****************************************
+ * Power-up Functions
+ ****************************************/
+
+// Simple pseudo-random number generator using game time
+u8 randomValue(void) {
+    static u16 seed = 12345;
+    seed = (seed * 1103515245 + 12345) & 0x7FFF;
+    return (u8)((seed + gameTime) % 256);
+}
+
+// Get color for power-up type
+u16 getPowerupColor(u8 type) {
+    switch(type) {
+        case POWERUP_SPEED_UP:   return RED;     // Bad - ball speeds up
+        case POWERUP_SPEED_DOWN: return GREEN;   // Good - ball slows down
+        case POWERUP_PAD_GROW:   return CYAN;    // Good - paddle grows
+        case POWERUP_PAD_SHRINK: return MAGENTA; // Bad - paddle shrinks
+        default: return WHITE;
+    }
+}
+
+// Spawn a new power-up at random location
+void spawnPowerup(void) {
+    if(powerupActive) return;  // Already one on screen
+
+    // Random position in middle area of screen
+    powerupX = 30 + (randomValue() % (SCREEN_WIDTH - 60));
+    powerupY = 80 + (randomValue() % (SCREEN_HEIGHT - 160));
+
+    // Random type (1-4)
+    powerupType = 1 + (randomValue() % 4);
+    powerupActive = 1;
+}
+
+// Draw the power-up on screen
+void drawPowerup(void) {
+    if(!powerupActive) return;
+
+    u16 color = getPowerupColor(powerupType);
+
+    // Draw a filled square with border
+    EIE3810_TFTLCD_FillRectangle(powerupX, POWERUP_SIZE, powerupY, POWERUP_SIZE, color);
+    EIE3810_TFTLCD_DrawRectangle(powerupX, powerupY,
+                                  powerupX + POWERUP_SIZE, powerupY + POWERUP_SIZE, BLACK);
+
+    // Draw symbol inside based on type
+    if(powerupType == POWERUP_SPEED_UP || powerupType == POWERUP_SPEED_DOWN) {
+        // "S" for speed
+        EIE3810_TFTLCD_ShowChar(powerupX + 2, powerupY - 2, 'S', WHITE, color);
+    } else {
+        // "P" for paddle
+        EIE3810_TFTLCD_ShowChar(powerupX + 2, powerupY - 2, 'P', WHITE, color);
+    }
+}
+
+// Clear power-up from screen
+void clearPowerup(void) {
+    if(!powerupActive) return;
+    EIE3810_TFTLCD_FillRectangle(powerupX, POWERUP_SIZE + 2, powerupY, POWERUP_SIZE + 2, WHITE);
+    powerupActive = 0;
+    powerupType = POWERUP_NONE;
+}
+
+// Check if ball collides with power-up
+u8 checkPowerupCollision(void) {
+    if(!powerupActive) return 0;
+
+    // Simple box collision
+    if(ballX + BALL_RADIUS >= powerupX &&
+       ballX - BALL_RADIUS <= powerupX + POWERUP_SIZE &&
+       ballY + BALL_RADIUS >= powerupY &&
+       ballY - BALL_RADIUS <= powerupY + POWERUP_SIZE) {
+        return 1;
+    }
+    return 0;
+}
+
+// Apply power-up effect
+void applyPowerup(u8 type) {
+    activePowerupType = type;
+    powerupTimer = POWERUP_DURATION;
+
+    switch(type) {
+        case POWERUP_SPEED_UP:
+            // Ball speeds up
+            if(!speedBoostActive) {
+                originalSpeedDivider = currentSpeedDivider;
+                speedBoostActive = 1;
+            }
+            if(currentSpeedDivider > MIN_SPEED_DIVIDER) {
+                currentSpeedDivider = MIN_SPEED_DIVIDER;  // Max speed
+            }
+            break;
+
+        case POWERUP_SPEED_DOWN:
+            // Ball slows down
+            if(!speedBoostActive) {
+                originalSpeedDivider = currentSpeedDivider;
+                speedBoostActive = 1;
+            }
+            currentSpeedDivider = INITIAL_SPEED_DIVIDER + 1;  // Slow
+            break;
+
+        case POWERUP_PAD_GROW:
+            // Both paddles grow
+            if(currentPadWidth < MAX_PAD_WIDTH) {
+                // Clear old pads first
+                EIE3810_TFTLCD_FillRectangle(padA_x, currentPadWidth, padA_y, PAD_HEIGHT, WHITE);
+                EIE3810_TFTLCD_FillRectangle(padB_x, currentPadWidth, padB_y, PAD_HEIGHT, WHITE);
+                currentPadWidth += 15;
+                if(currentPadWidth > MAX_PAD_WIDTH) currentPadWidth = MAX_PAD_WIDTH;
+            }
+            break;
+
+        case POWERUP_PAD_SHRINK:
+            // Both paddles shrink
+            if(currentPadWidth > MIN_PAD_WIDTH) {
+                EIE3810_TFTLCD_FillRectangle(padA_x, currentPadWidth, padA_y, PAD_HEIGHT, WHITE);
+                EIE3810_TFTLCD_FillRectangle(padB_x, currentPadWidth, padB_y, PAD_HEIGHT, WHITE);
+                currentPadWidth -= 10;
+                if(currentPadWidth < MIN_PAD_WIDTH) currentPadWidth = MIN_PAD_WIDTH;
+            }
+            break;
+    }
+
+    // Play sound
+    Buzzer_On();
+    Delay(10000);
+    Buzzer_Off();
+}
+
+// Update power-up timer and expire effects
+void updatePowerupTimer(void) {
+    if(powerupTimer > 0) {
+        powerupTimer--;
+
+        if(powerupTimer == 0) {
+            // Effect expired - restore speed if it was modified
+            if(speedBoostActive && (activePowerupType == POWERUP_SPEED_UP ||
+                                    activePowerupType == POWERUP_SPEED_DOWN)) {
+                currentSpeedDivider = originalSpeedDivider;
+                speedBoostActive = 0;
+            }
+            activePowerupType = POWERUP_NONE;
+        }
+    }
 }
 
 /****************************************
@@ -246,6 +419,14 @@ void initGame(u8 seed, u8 diff) {
     lastSpeedIncreaseBounce = 0;
     lastPadShrinkBounce = 0;
 
+    // Reset power-up state
+    powerupActive = 0;
+    powerupType = POWERUP_NONE;
+    powerupTimer = 0;
+    activePowerupType = POWERUP_NONE;
+    lastPowerupSpawn = 0;
+    speedBoostActive = 0;
+
     if(diff == 0) {
         speedMultiplier = 1;
     } else {
@@ -314,6 +495,24 @@ void updateBallPosition(void) {
             EIE3810_TFTLCD_FillRectangle(padB_x, currentPadWidth, padB_y, PAD_HEIGHT, WHITE);
             currentPadWidth -= 5;  // Shrink by 5 pixels
         }
+    }
+
+    // ========== POWER-UP SYSTEM ==========
+    // Update power-up effect timer
+    updatePowerupTimer();
+
+    // Spawn new power-up periodically
+    if(!powerupActive && (gameTime - lastPowerupSpawn) >= POWERUP_SPAWN_INTERVAL) {
+        spawnPowerup();
+        lastPowerupSpawn = gameTime;
+        drawPowerup();
+    }
+
+    // Check if ball collects power-up
+    if(checkPowerupCollision()) {
+        u8 collectedType = powerupType;
+        clearPowerup();
+        applyPowerup(collectedType);
     }
 
     // Left/right walls
@@ -396,6 +595,11 @@ void updateBallPosition(void) {
 
     // Redraw pads in case ball clearing erased part of them
     drawPads();
+
+    // Redraw power-up if active
+    if(powerupActive) {
+        drawPowerup();
+    }
 }
 
 void movePlayerAPad(s8 direction) {
