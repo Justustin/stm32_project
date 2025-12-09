@@ -167,19 +167,19 @@ void startCountdown(void) {
 
     // Show "3"
     showString(100, 140, "  3  ", RED, WHITE);
-    DisplayDelay(15000000);  // ~1.5 seconds
+    DisplayDelay(7500000);  // ~0.75 seconds
 
     // Show "2"
     showString(100, 140, "  2  ", RED, WHITE);
-    DisplayDelay(15000000);  // ~1.5 seconds
+    DisplayDelay(7500000);  // ~0.75 seconds
 
     // Show "1"
     showString(100, 140, "  1  ", RED, WHITE);
-    DisplayDelay(15000000);  // ~1.5 seconds
+    DisplayDelay(7500000);  // ~0.75 seconds
 
     // Show "GO!"
     showString(90, 140, " GO! ", GREEN, WHITE);
-    DisplayDelay(10000000);  // ~1 second
+    DisplayDelay(5000000);  // ~0.5 seconds
 }
 
 void showPauseScreen(void) {
