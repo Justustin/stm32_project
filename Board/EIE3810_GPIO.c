@@ -7,17 +7,17 @@ void Buzzer_Init(void)
 	RCC->APB2ENR |= 1<<3; // Enable PORTB clock
 	GPIOB->CRH &= 0xFFFFFFF0; // Clear PB8 configuration
 	GPIOB->CRH |= 0x00000003; // PB8: Output mode, max speed 50 MHz, push-pull
-	GPIOB->BRR = 1<<8; // Set PB8 LOW (Buzzer off initially)
+	GPIOB->ODR &= ~(1<<8); // Set PB8 LOW (Buzzer off initially)
 }
 
 void Buzzer_On(void)
 {
-	GPIOB->BSRR = 1<<8; // Set PB8 HIGH (Buzzer on)
+	GPIOB->ODR |= (1<<8); // Set PB8 HIGH (Buzzer on)
 }
 
 void Buzzer_Off(void)
 {
-	GPIOB->BRR = 1<<8; // Pull PB8 LOW (Buzzer off)
+	GPIOB->ODR &= ~(1<<8); // Set PB8 LOW (Buzzer off)
 }
 
 // KEY buttons: KEY0 (PE4), KEY1 (PE3), KEY2 (PE2), KEY_UP (PA0)
