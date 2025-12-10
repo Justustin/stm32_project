@@ -531,7 +531,7 @@ void updateBallPosition(void) {
         if(ballX >= SCREEN_WIDTH - BALL_RADIUS) ballX = SCREEN_WIDTH - BALL_RADIUS;
         bounceCount++;
         Buzzer_On();
-        Delay(5000);
+        Delay(50000);
         Buzzer_Off();
     }
 
@@ -555,7 +555,7 @@ void updateBallPosition(void) {
 
         bounceCount++;
         Buzzer_On();
-        Delay(5000);
+        Delay(50000);
         Buzzer_Off();
     }
 
@@ -577,7 +577,7 @@ void updateBallPosition(void) {
 
         bounceCount++;
         Buzzer_On();
-        Delay(5000);
+        Delay(50000);
         Buzzer_Off();
     }
 
