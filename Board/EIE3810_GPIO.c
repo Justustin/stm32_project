@@ -1,23 +1,23 @@
 #include "EIE3810_GPIO.h"
 #include "stm32f10x.h"
 
-// Buzzer on GPIOB Pin 8 (active-LOW: LOW=ON, HIGH=OFF)
+// Buzzer on GPIOB Pin 8 (active-HIGH: HIGH=ON, LOW=OFF)
 void Buzzer_Init(void)
 {
 	RCC->APB2ENR |= 1<<3; // Enable PORTB clock
 	GPIOB->CRH &= 0xFFFFFFF0; // Clear PB8 configuration
 	GPIOB->CRH |= 0x00000003; // PB8: Output mode, max speed 50 MHz, push-pull
-	GPIOB->BSRR = 1<<8; // Set PB8 HIGH (Buzzer off initially)
+	GPIOB->BRR = 1<<8; // Set PB8 LOW (Buzzer off initially)
 }
 
 void Buzzer_On(void)
 {
-	GPIOB->BRR = 1<<8; // Pull PB8 LOW (Buzzer on)
+	GPIOB->BSRR = 1<<8; // Set PB8 HIGH (Buzzer on)
 }
 
 void Buzzer_Off(void)
 {
-	GPIOB->BSRR = 1<<8; // Set PB8 HIGH (Buzzer off)
+	GPIOB->BRR = 1<<8; // Pull PB8 LOW (Buzzer off)
 }
 
 // KEY buttons: KEY0 (PE4), KEY1 (PE3), KEY2 (PE2), KEY_UP (PA0)
