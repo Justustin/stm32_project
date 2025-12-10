@@ -1,23 +1,23 @@
 #include "EIE3810_GPIO.h"
 #include "stm32f10x.h"
 
-// Buzzer is typically on GPIOB Pin 8
+// Buzzer on GPIOF Pin 8 (for 4.3" LCD board - Explorer/Warship)
 void Buzzer_Init(void)
 {
-	RCC->APB2ENR |= 1<<3; // Enable PORTB clock
-	GPIOB->CRH &= 0xFFFFFFF0; // Clear PB8 configuration
-	GPIOB->CRH |= 0x00000003; // PB8: Output mode, max speed 50 MHz, General purpose output push-pull
-	GPIOB->BRR = 1<<8; // Reset PB8 (Buzzer off)
+	RCC->APB2ENR |= 1<<7; // Enable PORTF clock
+	GPIOF->CRH &= 0xFFFFFFF0; // Clear PF8 configuration (bits 0-3)
+	GPIOF->CRH |= 0x00000003; // PF8: Output mode, max speed 50 MHz, push-pull
+	GPIOF->BRR = 1<<8; // Reset PF8 (Buzzer off)
 }
 
 void Buzzer_On(void)
 {
-	GPIOB->BSRR = 1<<8; // Set PB8 (Buzzer on)
+	GPIOF->BSRR = 1<<8; // Set PF8 (Buzzer on)
 }
 
 void Buzzer_Off(void)
 {
-	GPIOB->BRR = 1<<8; // Reset PB8 (Buzzer off)
+	GPIOF->BRR = 1<<8; // Reset PF8 (Buzzer off)
 }
 
 // KEY buttons: KEY0 (PE4), KEY1 (PE3), KEY2 (PE2), KEY_UP (PA0)
