@@ -12,14 +12,14 @@ extern volatile u8 difficulty;
 extern volatile u8 playerA_ready;
 extern volatile u8 playerB_ready;
 
-// Game constants
-#define BALL_RADIUS 6
-#define INITIAL_PAD_WIDTH 50  // Starting paddle width
-#define MIN_PAD_WIDTH 20      // Minimum paddle width
-#define MAX_PAD_WIDTH 80      // Maximum paddle width (for power-up)
-#define PAD_HEIGHT 8          // Pong-style paddle height
-#define SCREEN_WIDTH 240      // 2.8" TFT LCD width
-#define SCREEN_HEIGHT 320     // 2.8" TFT LCD height
+// Game constants - Updated for 4.3" TFT LCD (480x800)
+#define BALL_RADIUS 10
+#define INITIAL_PAD_WIDTH 100  // Starting paddle width (scaled for larger screen)
+#define MIN_PAD_WIDTH 40       // Minimum paddle width
+#define MAX_PAD_WIDTH 160      // Maximum paddle width (for power-up)
+#define PAD_HEIGHT 12          // Pong-style paddle height
+#define SCREEN_WIDTH 480       // 4.3" TFT LCD width
+#define SCREEN_HEIGHT 800      // 4.3" TFT LCD height
 #define INITIAL_SPEED_DIVIDER 3  // Initial ball speed (higher = slower)
 #define MIN_SPEED_DIVIDER 1      // Maximum ball speed
 
@@ -27,8 +27,8 @@ extern volatile u8 playerB_ready;
 #define CYAN    0x07FF    // Light blue
 #define MAGENTA 0xF81F    // Pink/purple
 
-// Power-up constants
-#define POWERUP_SIZE 12       // Size of power-up box
+// Power-up constants - scaled for larger screen
+#define POWERUP_SIZE 20       // Size of power-up box
 #define POWERUP_DURATION 500  // How long power-up effect lasts (in game frames)
 #define POWERUP_SPAWN_INTERVAL 300  // Frames between power-up spawns
 
@@ -39,20 +39,20 @@ extern volatile u8 playerB_ready;
 #define POWERUP_PAD_GROW 3    // Your paddle grows
 #define POWERUP_PAD_SHRINK 4  // Your paddle shrinks (bad)
 
-// Ball state
-u16 ballX = 120;
-u16 ballY = 160;
+// Ball state - centered for 480x800 screen
+u16 ballX = 240;
+u16 ballY = 400;
 s8 ballVx = 1;
 s8 ballVy = 1;
-u16 oldBallX = 120;
-u16 oldBallY = 160;
+u16 oldBallX = 240;
+u16 oldBallY = 400;
 u8 frameCounter = 0;  // For slowing down ball
 u8 currentSpeedDivider = INITIAL_SPEED_DIVIDER;  // Current ball speed
 
-// Pad positions and size
-u16 padA_x = 95;   // Player A (bottom) - centered
-u16 padB_x = 95;   // Player B (top) - centered
-u16 padA_y = 305;  // Near bottom
+// Pad positions and size - for 480x800 screen
+u16 padA_x = 190;  // Player A (bottom) - centered (480-100)/2 = 190
+u16 padB_x = 190;  // Player B (top) - centered
+u16 padA_y = 780;  // Near bottom (800 - 12 - 8)
 u16 padB_y = 8;    // Near top
 u8 currentPadWidth = INITIAL_PAD_WIDTH;  // Current paddle width (shrinks over time)
 
@@ -282,44 +282,49 @@ void updatePowerupTimer(void) {
 void showWelcomeScreen(void) {
     EIE3810_TFTLCD_FillScreen(BLUE);
 
-    // Match PDF design (Fig. 3)
-    showString(20, 80, "Welcome to mini", WHITE, BLUE);
-    showString(20, 100, "Project!", WHITE, BLUE);
+    // Match PDF design (Fig. 3) - scaled for 480x800
+    showString(40, 200, "Welcome to mini", WHITE, BLUE);
+    showString(40, 230, "Project!", WHITE, BLUE);
 
-    showString(20, 140, "This is the Final Lab.", YELLOW, BLUE);
+    showString(40, 300, "This is the Final Lab.", YELLOW, BLUE);
 
-    showString(20, 180, "Are you ready?", YELLOW, BLUE);
+    showString(40, 380, "Are you ready?", YELLOW, BLUE);
 
-    showString(20, 220, "OK! Let's start.", GREEN, BLUE);
+    showString(40, 460, "OK! Let's start.", GREEN, BLUE);
 
-    showString(20, 280, "Press KEY0...", WHITE, BLUE);
+    showString(40, 600, "Press KEY0...", WHITE, BLUE);
 }
 
 void showDifficultyScreen(void) {
     EIE3810_TFTLCD_FillScreen(WHITE);
-    showString(10, 60, "Select difficulty:", RED, WHITE);
+    showString(20, 120, "Select difficulty:", RED, WHITE);
 
     if(difficulty == 0) {
-        showString(10, 100, "> Easy", BLUE, WHITE);
-        showString(10, 120, "  Hard", BLACK, WHITE);
+        showString(20, 180, "> Easy", BLUE, WHITE);
+        showString(20, 210, "  Hard", BLACK, WHITE);
     } else {
-        showString(10, 100, "  Easy", BLACK, WHITE);
-        showString(10, 120, "> Hard", BLUE, WHITE);
+        showString(20, 180, "  Easy", BLACK, WHITE);
+        showString(20, 210, "> Hard", BLUE, WHITE);
     }
 
-    showString(10, 160, "KEY1: Toggle", RED, WHITE);
-    showString(10, 180, "KEY0: Player A Ready", RED, WHITE);
-    showString(10, 200, "KEY_UP: Player B Ready", RED, WHITE);
+    // Updated controls per PDF
+    showString(20, 280, "Player A:", RED, WHITE);
+    showString(20, 310, "  KEY_UP/KEY1: Select", RED, WHITE);
+    showString(20, 340, "  KEY0: Confirm", RED, WHITE);
+
+    showString(20, 400, "Player B:", RED, WHITE);
+    showString(20, 430, "  JOYPAD UP/DOWN: Select", RED, WHITE);
+    showString(20, 460, "  SELECT: Confirm", RED, WHITE);
 
     if(playerA_ready) {
-        showString(10, 240, "Player A: Ready", GREEN, WHITE);
+        showString(20, 540, "Player A: Ready", GREEN, WHITE);
     } else {
-        showString(10, 240, "Player A: Not Ready", GRAY, WHITE);
+        showString(20, 540, "Player A: Not Ready", GRAY, WHITE);
     }
     if(playerB_ready) {
-        showString(10, 260, "Player B: Ready", GREEN, WHITE);
+        showString(20, 580, "Player B: Ready", GREEN, WHITE);
     } else {
-        showString(10, 260, "Player B: Not Ready", GRAY, WHITE);
+        showString(20, 580, "Player B: Not Ready", GRAY, WHITE);
     }
 }
 
@@ -329,71 +334,73 @@ void updateDifficultyScreen(void) {
 
 void showWaitUSARTScreen(void) {
     EIE3810_TFTLCD_FillScreen(BLUE);
-    showString(10, 120, "Use USART for a", YELLOW, BLUE);
-    showString(10, 140, "random direction.", YELLOW, BLUE);
-    showString(10, 180, "Send value 0-7", WHITE, BLUE);
+    showString(20, 300, "Use USART for a", YELLOW, BLUE);
+    showString(20, 330, "random direction.", YELLOW, BLUE);
+    showString(20, 400, "Send value 0-7", WHITE, BLUE);
 }
 
 void showSeedReceivedScreen(u8 seed) {
     EIE3810_TFTLCD_FillScreen(BLUE);
-    showString(30, 100, "Random seed:", WHITE, BLUE);
-    showNumber(180, 100, seed, 1, YELLOW, BLUE);
-    showString(30, 150, "Direction set!", GREEN, BLUE);
-    showString(30, 200, "Get ready...", WHITE, BLUE);
+    showString(60, 280, "Random seed:", WHITE, BLUE);
+    showNumber(220, 280, seed, 1, YELLOW, BLUE);
+    showString(60, 360, "Direction set!", GREEN, BLUE);
+    showString(60, 440, "Get ready...", WHITE, BLUE);
 }
 
 void startCountdown(void) {
     EIE3810_TFTLCD_FillScreen(WHITE);
     EIE3810_TFTLCD_DrawRectangle(0, 0, SCREEN_WIDTH-1, SCREEN_HEIGHT-1, BLACK);
 
-    // Show "3"
-    showString(100, 140, "  3  ", RED, WHITE);
+    // Show "3" - centered for 480x800
+    showString(200, 380, "  3  ", RED, WHITE);
     DisplayDelay(7500000);  // ~0.75 seconds
 
     // Show "2"
-    showString(100, 140, "  2  ", RED, WHITE);
+    showString(200, 380, "  2  ", RED, WHITE);
     DisplayDelay(7500000);  // ~0.75 seconds
 
     // Show "1"
-    showString(100, 140, "  1  ", RED, WHITE);
+    showString(200, 380, "  1  ", RED, WHITE);
     DisplayDelay(7500000);  // ~0.75 seconds
 
     // Show "GO!"
-    showString(90, 140, " GO! ", GREEN, WHITE);
+    showString(180, 380, " GO! ", GREEN, WHITE);
     DisplayDelay(5000000);  // ~0.5 seconds
 }
 
 void showPauseScreen(void) {
-    EIE3810_TFTLCD_FillRectangle(60, 120, 140, 30, BLACK);
-    showString(80, 150, "PAUSED", YELLOW, BLACK);
+    // Centered for 480x800 screen
+    EIE3810_TFTLCD_FillRectangle(140, 200, 360, 40, BLACK);
+    showString(180, 370, "PAUSED", YELLOW, BLACK);
 }
 
 void showGameOverScreen(void) {
     EIE3810_TFTLCD_FillScreen(BLACK);
 
-    showString(60, 40, "GAME OVER", RED, BLACK);
+    // Centered for 480x800 screen
+    showString(140, 100, "GAME OVER", RED, BLACK);
 
     if(winner == 1) {
-        showString(40, 80, "Player A Wins!", GREEN, BLACK);
+        showString(100, 180, "Player A Wins!", GREEN, BLACK);
     } else if(winner == 2) {
-        showString(40, 80, "Player B Wins!", GREEN, BLACK);
+        showString(100, 180, "Player B Wins!", GREEN, BLACK);
     }
 
     // Show game stats
-    showString(20, 130, "Time:", WHITE, BLACK);
-    showNumber(80, 130, gameTime / 100, 5, YELLOW, BLACK);
+    showString(40, 300, "Time:", WHITE, BLACK);
+    showNumber(120, 300, gameTime / 100, 5, YELLOW, BLACK);
 
-    showString(20, 160, "Bounces:", WHITE, BLACK);
-    showNumber(100, 160, bounceCount, 4, YELLOW, BLACK);
+    showString(40, 360, "Bounces:", WHITE, BLACK);
+    showNumber(150, 360, bounceCount, 4, YELLOW, BLACK);
 
     // Show final difficulty stats
-    showString(20, 190, "Final Speed:", WHITE, BLACK);
-    showNumber(130, 190, INITIAL_SPEED_DIVIDER - currentSpeedDivider + 1, 1, YELLOW, BLACK);
+    showString(40, 420, "Final Speed:", WHITE, BLACK);
+    showNumber(180, 420, INITIAL_SPEED_DIVIDER - currentSpeedDivider + 1, 1, YELLOW, BLACK);
 
-    showString(20, 220, "Pad Size:", WHITE, BLACK);
-    showNumber(100, 220, currentPadWidth, 2, YELLOW, BLACK);
+    showString(40, 480, "Pad Size:", WHITE, BLACK);
+    showNumber(150, 480, currentPadWidth, 2, YELLOW, BLACK);
 
-    showString(20, 270, "Press KEY0 to restart", WHITE, BLACK);
+    showString(40, 600, "Press KEY0 to restart", WHITE, BLACK);
 }
 
 /****************************************
@@ -457,9 +464,9 @@ void initGame(u8 seed, u8 diff) {
     drawPads();
     drawBall();
 
-    // HUD display - fit on 240px width
-    showString(5, 5, "Time:", BLACK, WHITE);
-    showString(130, 5, "Bounces:", BLACK, WHITE);
+    // HUD display - scaled for 480px width
+    showString(10, 10, "Time:", BLACK, WHITE);
+    showString(280, 10, "Bounces:", BLACK, WHITE);
 }
 
 void updateBallPosition(void) {
@@ -661,25 +668,25 @@ void handleJoypadInput(u8 data) {
     else if(currentState == STATE_PAUSED) {
         if(data == 'T') {
             currentState = STATE_PLAYING;
-            // Clear pause text (fixed coordinates for 2.8" LCD)
-            EIE3810_TFTLCD_FillRectangle(60, 120, 140, 30, WHITE);
+            // Clear pause text (scaled for 4.3" LCD)
+            EIE3810_TFTLCD_FillRectangle(140, 200, 360, 40, WHITE);
         }
     }
 }
 
 void updateGameDisplay(void) {
     if(currentState != STATE_PLAYING) return;
-    
+
     static u32 lastDisplayTime = 0;
     if(gameTime - lastDisplayTime >= 100) {
         lastDisplayTime = gameTime;
 
-        // Update Time display (3 digits * 8px = 24px wide, 16px tall)
-        EIE3810_TFTLCD_FillRectangle(45, 24, 5, 16, WHITE);
-        showNumber(45, 5, gameTime / 100, 3, BLACK, WHITE);
+        // Update Time display - scaled for 480px width
+        EIE3810_TFTLCD_FillRectangle(60, 40, 10, 16, WHITE);
+        showNumber(60, 10, gameTime / 100, 4, BLACK, WHITE);
 
         // Update Bounces display
-        EIE3810_TFTLCD_FillRectangle(200, 24, 5, 16, WHITE);
-        showNumber(200, 5, bounceCount, 3, BLACK, WHITE);
+        EIE3810_TFTLCD_FillRectangle(380, 40, 10, 16, WHITE);
+        showNumber(380, 10, bounceCount, 4, BLACK, WHITE);
     }
 }

@@ -204,7 +204,7 @@ void USART1_IRQHandler(void)
 }
 
 /**
-  * @brief  EXTI0 interrupt handler (KEY_UP - Player B ready)
+  * @brief  EXTI0 interrupt handler (KEY_UP - Toggle difficulty for Player A)
   */
 void EXTI0_IRQHandler(void)
 {
@@ -214,23 +214,10 @@ void EXTI0_IRQHandler(void)
 
 		if(currentState == STATE_DIFFICULTY_SELECT)
 		{
-			// KEY_UP sets Player B ready
-			playerB_ready = 1;
+			// KEY_UP toggles difficulty (per PDF: Player A uses KEY_UP and KEY1 to select difficulty)
+			difficulty = 1 - difficulty;
 			extern void updateDifficultyScreen(void);
 			updateDifficultyScreen();
-
-			// Check if both players are ready
-			if(playerA_ready && playerB_ready)
-			{
-				currentState = STATE_WAIT_USART;
-				extern void showWaitUSARTScreen(void);
-				showWaitUSARTScreen();
-			}
-		}
-		else if(currentState == STATE_PLAYING)
-		{
-			// KEY_UP can also be used to move Player A pad right during gameplay
-			movePlayerAPad(1); // Move right
 		}
 
 		EXTI->PR = 1<<0; // Clear pending bit
@@ -238,13 +225,20 @@ void EXTI0_IRQHandler(void)
 }
 
 /**
-  * @brief  EXTI2 interrupt handler (KEY2 - Not available on this board)
+  * @brief  EXTI2 interrupt handler (KEY2 - Player A pad move right)
   */
 void EXTI2_IRQHandler(void)
 {
 	if(EXTI->PR & (1<<2)) // Check EXTI2 pending bit
 	{
-		// KEY2 not available on this board - no action
+		Delay(10000); // Debounce delay
+
+		if(currentState == STATE_PLAYING)
+		{
+			// KEY2 moves Player A pad right (per PDF section 2.5)
+			movePlayerAPad(1); // Move right
+		}
+
 		EXTI->PR = 1<<2; // Clear pending bit
 	}
 }
@@ -273,8 +267,8 @@ void EXTI3_IRQHandler(void)
 		else if(currentState == STATE_PAUSED)
 		{
 			currentState = STATE_PLAYING;
-			// Clear pause text (fixed coordinates for 2.8" LCD)
-			EIE3810_TFTLCD_FillRectangle(60, 120, 140, 30, WHITE);
+			// Clear pause text (scaled for 4.3" LCD)
+			EIE3810_TFTLCD_FillRectangle(140, 200, 360, 40, WHITE);
 		}
 
 		EXTI->PR = 1<<3; // Clear pending bit
