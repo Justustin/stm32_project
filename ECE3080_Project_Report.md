@@ -9,7 +9,7 @@
 
 ## 1. Introduction
 
-This project implements a two-player Pong-style bouncing ball game on an STM32F103ZE microcontroller with a 4.3" TFT LCD display (480x800 resolution). The game incorporates GPIO, USART, LCD, external interrupts, and timer functionalities learned throughout Labs 1-5.
+This project implements a two-player Pong-style bouncing ball game on an STM32F103ZE microcontroller with a TFT LCD display. The game incorporates GPIO, USART, LCD, external interrupts, and timer functionalities learned throughout Labs 1-5.
 
 ---
 
@@ -18,12 +18,12 @@ This project implements a two-player Pong-style bouncing ball game on an STM32F1
 ### 2.1 Hardware Configuration
 
 - **Microcontroller**: STM32F103ZE (72MHz)
-- **Display**: ALIENTEK 4.3" TFT LCD (NT35510 controller, 480x800 pixels)
+- **Display**: TFT LCD (480x800 pixels)
 - **Input Devices**:
   - KEY0 (PE4), KEY1 (PE3), KEY2 (PE2), KEY_UP (PA0)
   - JOYPAD (via COM3)
 - **Output**: Buzzer (PB8)
-- **Communication**: USART1 (9600 baud)
+- **Communication**: USART1
 
 ### 2.2 Welcome Screen and Difficulty Selection
 
@@ -150,6 +150,27 @@ if(ballY + BALL_RADIUS >= padA_y && ballX >= padA_x &&
 }
 ```
 
+**Buzzer Configuration** (`EIE3810_GPIO.c`):
+```c
+void Buzzer_Init(void)
+{
+    RCC->APB2ENR |= 1<<3;  // Enable PORTB clock
+    GPIOB->CRH &= 0xFFFFFFF0;
+    GPIOB->CRH |= 0x00000003;  // PB8: Output push-pull
+    GPIOB->ODR &= ~(1<<8);  // Buzzer off initially
+}
+
+void Buzzer_On(void)
+{
+    GPIOB->ODR |= (1<<8);  // Set HIGH
+}
+
+void Buzzer_Off(void)
+{
+    GPIOB->ODR &= ~(1<<8);  // Set LOW
+}
+```
+
 ### 2.6 HUD Display (Time and Bounces)
 
 **Implementation**: Elapsed time and bounce count are displayed at the top of the screen during gameplay.
@@ -215,6 +236,7 @@ void EXTI3_IRQHandler(void)  // KEY1
     }
     else if(currentState == STATE_PAUSED) {
         currentState = STATE_PLAYING;
+        // Clear pause overlay
         EIE3810_TFTLCD_FillRectangle(140, 200, 360, 40, WHITE);
     }
 }
@@ -226,7 +248,7 @@ void EXTI3_IRQHandler(void)  // KEY1
 
 ### 3.1 Progressive Difficulty - Ball Speed Increase
 
-**Description**: The ball speed increases every 5 bounces, making the game progressively harder.
+**Description**: The ball speed increases every 5 bounces, making the game progressively harder as players rally longer.
 
 **Implementation** (`game.c`):
 ```c
@@ -242,9 +264,11 @@ if(bounceCount >= lastSpeedIncreaseBounce + 5) {
 }
 ```
 
+**Result**: The ball starts slow, giving players time to learn the controls, then gradually accelerates to test their reflexes.
+
 ### 3.2 Progressive Difficulty - Paddle Shrinking
 
-**Description**: Paddles shrink by 5 pixels every 10 bounces, requiring more precise positioning.
+**Description**: Paddles shrink by 5 pixels every 10 bounces, requiring more precise positioning as the game progresses.
 
 **Implementation** (`game.c`):
 ```c
@@ -263,9 +287,11 @@ if(bounceCount >= lastPadShrinkBounce + 10) {
 }
 ```
 
+**Result**: Combined with speed increases, this creates exponentially increasing difficulty.
+
 ### 3.3 Angle-Based Reflection
 
-**Description**: Ball reflection angle depends on where it hits the paddle:
+**Description**: Ball reflection angle depends on where it hits the paddle, giving players strategic control:
 - **Left third**: Ball bounces left
 - **Middle third**: Ball maintains direction
 - **Right third**: Ball bounces right
@@ -283,16 +309,18 @@ if(hitPos < currentPadWidth / 3) {
 // Middle third keeps current direction
 ```
 
+**Result**: Players can aim their shots strategically, adding skill-based gameplay beyond simple reaction time.
+
 ### 3.4 Power-Up System
 
 **Description**: A comprehensive power-up system with 4 types that spawn randomly during gameplay:
 
-| Type | Color | Effect |
-|------|-------|--------|
-| Speed Up | Red | Ball speeds up (challenging) |
-| Speed Down | Green | Ball slows down (helpful) |
-| Paddle Grow | Cyan | Paddles grow larger |
-| Paddle Shrink | Magenta | Paddles shrink smaller |
+| Type | Color | Effect | Duration |
+|------|-------|--------|----------|
+| Speed Up | Red | Ball speeds up | 500 frames |
+| Speed Down | Green | Ball slows down | 500 frames |
+| Paddle Grow | Cyan | Paddles grow +15px | Permanent |
+| Paddle Shrink | Magenta | Paddles shrink -10px | Permanent |
 
 **Implementation** (`game.c`):
 ```c
@@ -300,11 +328,12 @@ if(hitPos < currentPadWidth / 3) {
 #define POWERUP_SPEED_DOWN 2
 #define POWERUP_PAD_GROW 3
 #define POWERUP_PAD_SHRINK 4
+#define POWERUP_SPAWN_INTERVAL 300
 
 void spawnPowerup(void) {
     if(powerupActive) return;
 
-    // Random position in middle area
+    // Random position in play area
     powerupX = 30 + (randomValue() % (SCREEN_WIDTH - 60));
     powerupY = 80 + (randomValue() % (SCREEN_HEIGHT - 160));
 
@@ -332,76 +361,37 @@ void applyPowerup(u8 type) {
             break;
     }
 
+    // Audio feedback
     Buzzer_On();
     Delay(10000);
     Buzzer_Off();
 }
 ```
 
----
-
-## 4. Hardware Adaptation for 4.3" LCD
-
-### 4.1 Display Driver Changes
-
-The game was adapted from a 2.8" LCD (240x320) to a 4.3" LCD (480x800) with NT35510 controller.
-
-**Key Changes** (`EIE3810_TFTLCD.c`):
+**Power-up Display**:
 ```c
-#define LCD_WIDTH   480
-#define LCD_HEIGHT  800
+void drawPowerup(void) {
+    if(!powerupActive) return;
 
-void EIE3810_TFTLCD_SetWindow(u16 xStar, u16 yStar, u16 xEnd, u16 yEnd)
-{
-    // 4.3" LCD uses split command format
-    EIE3810_TFTLCD_WrCmd(0x2A00); EIE3810_TFTLCD_WrData(xStar >> 8);
-    EIE3810_TFTLCD_WrCmd(0x2A01); EIE3810_TFTLCD_WrData(xStar & 0xFF);
-    EIE3810_TFTLCD_WrCmd(0x2A02); EIE3810_TFTLCD_WrData(xEnd >> 8);
-    EIE3810_TFTLCD_WrCmd(0x2A03); EIE3810_TFTLCD_WrData(xEnd & 0xFF);
-    // ... similar for Y coordinates
-    EIE3810_TFTLCD_WrCmd(0x2C00);
+    u16 color = getPowerupColor(powerupType);
+    EIE3810_TFTLCD_FillRectangle(powerupX, POWERUP_SIZE, powerupY, POWERUP_SIZE, color);
+
+    // Draw symbol (S for speed, P for paddle)
+    if(powerupType == POWERUP_SPEED_UP || powerupType == POWERUP_SPEED_DOWN) {
+        EIE3810_TFTLCD_ShowChar(powerupX + 2, powerupY, 'S', WHITE, color);
+    } else {
+        EIE3810_TFTLCD_ShowChar(powerupX + 2, powerupY, 'P', WHITE, color);
+    }
 }
 ```
 
-### 4.2 Game Element Scaling
-
-| Element | 2.8" LCD | 4.3" LCD |
-|---------|----------|----------|
-| Screen Width | 240 | 480 |
-| Screen Height | 320 | 800 |
-| Ball Radius | 6 | 10 |
-| Paddle Width | 50 | 100 |
-| Paddle Height | 8 | 12 |
-| Power-up Size | 12 | 20 |
-
-### 4.3 Buzzer Configuration
-
-**Implementation** (`EIE3810_GPIO.c`):
-```c
-void Buzzer_Init(void)
-{
-    RCC->APB2ENR |= 1<<3;  // Enable PORTB clock
-    GPIOB->CRH &= 0xFFFFFFF0;
-    GPIOB->CRH |= 0x00000003;  // PB8: Output push-pull
-    GPIOB->ODR &= ~(1<<8);  // Buzzer off initially
-}
-
-void Buzzer_On(void)
-{
-    GPIOB->ODR |= (1<<8);  // Set HIGH
-}
-
-void Buzzer_Off(void)
-{
-    GPIOB->ODR &= ~(1<<8);  // Set LOW
-}
-```
+**Result**: Power-ups add unpredictability and strategic decision-making. Players must decide whether to intercept beneficial power-ups or avoid harmful ones.
 
 ---
 
-## 5. State Machine Design
+## 4. State Machine Design
 
-The game uses a state machine with the following states:
+The game uses a finite state machine with the following states:
 
 ```
 STATE_WELCOME → STATE_DIFFICULTY_SELECT → STATE_WAIT_USART →
@@ -425,21 +415,35 @@ typedef enum {
 
 ---
 
-## 6. Interrupt Configuration
+## 5. Interrupt Configuration
 
 ### External Interrupts (EXTI)
-- **EXTI0 (PA0 - KEY_UP)**: Rising edge, toggles difficulty
-- **EXTI2 (PE2 - KEY2)**: Falling edge, moves Player A pad right
-- **EXTI3 (PE3 - KEY1)**: Falling edge, toggles difficulty/pause
-- **EXTI4 (PE4 - KEY0)**: Falling edge, confirms/moves pad left
+
+| Interrupt | Pin | Trigger | Function |
+|-----------|-----|---------|----------|
+| EXTI0 | PA0 (KEY_UP) | Rising edge | Toggle difficulty |
+| EXTI2 | PE2 (KEY2) | Falling edge | Move Player A pad right |
+| EXTI3 | PE3 (KEY1) | Falling edge | Toggle difficulty / Pause |
+| EXTI4 | PE4 (KEY0) | Falling edge | Confirm / Move pad left |
 
 ### Timer Interrupt (TIM3)
 - **Period**: 10ms
 - **Function**: Calls `updateBallPosition()` and `updateGameDisplay()`
 
 ### USART Interrupt (USART1)
-- **Baud Rate**: 9600
-- **Function**: Receives random seed for ball direction
+- **Function**: Receives random seed (0-7) for initial ball direction
+
+---
+
+## 6. Control Summary
+
+| Action | Player A | Player B |
+|--------|----------|----------|
+| Select Difficulty | KEY_UP / KEY1 | JOYPAD UP/DOWN |
+| Confirm Ready | KEY0 | JOYPAD SELECT |
+| Move Pad Left | KEY0 | JOYPAD LEFT |
+| Move Pad Right | KEY2 | JOYPAD RIGHT |
+| Pause/Resume | KEY1 | JOYPAD START |
 
 ---
 
@@ -448,12 +452,13 @@ typedef enum {
 This project successfully implements a fully functional two-player Pong game with the following features:
 
 1. **Complete game flow** as specified in sections 2.2-2.8 of the handout
-2. **Progressive difficulty** through speed increases and paddle shrinking
-3. **Enhanced gameplay** with angle-based reflection and power-up system
-4. **Hardware adaptation** for the larger 4.3" LCD display
-5. **Robust input handling** for both keyboard and JOYPAD controls
+2. **Progressive difficulty** through automatic speed increases and paddle shrinking
+3. **Strategic gameplay** with angle-based ball reflection
+4. **Dynamic elements** with a 4-type power-up system
+5. **Audio feedback** via buzzer for all bounce events
+6. **Robust state management** using a finite state machine
 
-The improvements make the game significantly more challenging and engaging, with dynamic difficulty adjustment and strategic power-up collection adding depth to the gameplay experience.
+The improvements make the game significantly more challenging and engaging compared to a basic Pong implementation. The combination of progressive difficulty, strategic aiming, and random power-ups creates varied gameplay that remains interesting across multiple sessions.
 
 ---
 
@@ -467,7 +472,7 @@ stm32_project/
 ├── Board/
 │   ├── game.c              # Game logic and display functions
 │   ├── game.h              # Game state definitions
-│   ├── EIE3810_TFTLCD.c    # LCD driver for 4.3" display
+│   ├── EIE3810_TFTLCD.c    # LCD driver
 │   ├── EIE3810_TFTLCD.h    # LCD function declarations
 │   ├── EIE3810_GPIO.c      # GPIO (buzzer, keys) configuration
 │   └── EIE3810_GPIO.h      # GPIO function declarations
@@ -476,4 +481,4 @@ stm32_project/
 
 ---
 
-*Report generated for ECE3080 Project*
+*Report generated for ECE3080 Introduction to Embedded Systems Project*
